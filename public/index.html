@@ -16,6 +16,16 @@
     li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
     strong { display: block; font-size: 18px; margin-bottom: 5px; }
     li span { color: #bfd0e5; }
+    [hidden] { display: none !important; }
+    .auth { margin: 26px 0; padding: 22px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .auth h2 { margin: 0 0 12px; font-size: 22px; }
+    .auth label { display: block; margin: 14px 0 6px; }
+    .auth input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #71869c; border-radius: 8px; background: #101a28; color: #ecf4ff; font: inherit; }
+    .auth button { margin-top: 16px; padding: 11px 20px; border: 0; border-radius: 8px; background: #8ad8df; color: #101a28; font: inherit; font-weight: 700; cursor: pointer; }
+    .auth button:disabled { opacity: .5; cursor: wait; }
+    .auth :focus-visible { outline: 3px solid #8ad8df; outline-offset: 3px; }
+    .auth-error { color: #ffbec8; }
+    .auth-error:empty { display: none; }
   </style>
 </head>
 <body>
@@ -23,7 +33,21 @@
     <div class="eyebrow">BYTE BACK · 2단계 자료 분리</div>
     <h1>자료실</h1>
     <p>가상 자료를 공개 파일에서 분리했습니다.</p>
-    <div class="notice">현재 자료 조회 주소는 공개되어 있습니다. 로그인과 접근 제한은 다음 단계에서 추가합니다.</div>
+    <section class="auth" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">계정 로그인</h2>
+      <p id="auth-status" role="status" aria-live="polite">로그인 상태를 확인하는 중입니다.</p>
+      <form id="login-form">
+        <label for="login-email">이메일</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required>
+        <label for="login-password">비밀번호</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button id="login-submit" type="submit" disabled>로그인</button>
+      </form>
+      <button id="logout-button" type="button" hidden>로그아웃</button>
+      <p id="auth-error" class="auth-error" role="alert"></p>
+      <noscript><p>로그인하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+    </section>
+    <div class="notice">계정 로그인과 관계없이 현재 자료 조회 주소는 공개되어 있습니다. 자료 접근 제한은 아직 적용되지 않았습니다.</div>
     <ul id="notes" aria-live="polite"><li>가상 자료를 불러오는 중입니다.</li></ul>
   </main>
   <script type="module">
@@ -54,5 +78,6 @@
       list.replaceChildren(item);
     }
   </script>
+  <script type="module" src="/login.mjs"></script>
 </body>
 </html>

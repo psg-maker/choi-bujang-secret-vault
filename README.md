@@ -1,6 +1,28 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 로그인 화면 추가 — 공개 설정 연결 (2026-10-28 KST)
+
+자료실에 이메일·비밀번호 로그인 폼과 로그인 계정 표시, 로그아웃 버튼을 추가했습니다. 공식 `@supabase/supabase-js` 2.117.2 SDK의 `signInWithPassword`, `getSession`, `onAuthStateChange`, `signOut({ scope: 'local' })`을 사용합니다. 비밀번호 검증과 세션 관리는 SDK에 맡기며 비밀번호·JWT를 직접 만들거나 로그에 남기지 않습니다. 로그인 실패 시 잘못된 자격 증명·이메일 미인증·요청 제한·연결 실패 등의 이유를 화면에 표시합니다.
+
+사용자가 제공한 Project URL과 publishable key를 `public/supabase-config.mjs`에 반영했습니다. 해당 공개 설정으로 Supabase `/auth/v1/settings`의 HTTP 200과 이메일 로그인 활성화를 확인했습니다. 서버 secret key는 이 파일에 넣지 않습니다. 설정이 없거나 형식이 맞지 않으면 화면에 설정 안내가 표시되고 로그인을 제출할 수 없습니다. SDK는 버전을 고정한 jsDelivr 주소에서 불러오므로 네트워크 연결이 필요합니다.
+
+확인 명령: `node --test test/*.test.mjs`. 현재 17개 시험 및 `npm.cmd run build -- --local`이 통과했습니다. 인증 서비스 경계는 시험 대역으로 검사했으며 실제 A 계정 로그인은 미실행입니다. 변경을 배포한 뒤 화면에서 A 계정 정보를 직접 입력하고 **로그인**을 누르면 계정 표시·로그아웃 버튼이 나타나고 입력 폼이 숨겨져야 합니다. **로그아웃**을 누르면 입력 폼과 로그아웃 상태 표시로 돌아와야 합니다. 잘못된 비밀번호는 로그인 상태로 바뀌지 않고 실패 이유를 보여야 합니다.
+
+이번 변경은 로그인 화면만 추가합니다. 기존 `/api/notes` 공개 조회와 DB 권한은 유지되며, 화면의 로그인 상태는 자료 접근 제한을 뜻하지 않습니다. `aleph.config.json`은 2단계 설정을 보존했습니다. 이 변경의 커밋·푸시·배포와 3단계 전체 완료 판정은 수행하지 않았습니다.
+
 ## 현재 작업: 2단계 저장점
+
+### 최신 확인 (2026-10-28 KST)
+
+현재 Production `https://choi-bujang-secret-vault-five-blue.vercel.app`의 `/aleph.json`은 HTTP 200·단계 2·커밋 `7c7b16f9f86cf820b7219f520394914a12d53def`입니다. Vercel 배포 조회에서도 같은 커밋의 Production `READY`를 확인했습니다. 실제 배포 URL은 `https://choi-bujang-secret-vault-f485m34k1-psg-maker.vercel.app`입니다. 운영 도메인의 비로그인 `/api/notes`는 HTTP 200·4건, `/`는 200·`X-Content-Type-Options: nosniff`, `/data.json`은 404입니다. 현재 Vercel→Supabase 조회가 작동하며, 로그인 없이 읽을 수 있는 상태는 2단계의 남은 약점입니다.
+
+이전 확인 SHA `fd0709b…` 이후 `c668b42`(문서·설정 저장점), `7c7b16f`(`nosniff` 헤더 추가)가 이어졌습니다. 동일 SHA의 반복 재배포 이력도 확인했습니다. 사용자가 설명한 연동 오류의 원인·설정 수정 내역은 Vercel 빌드·런타임 로그 접근이 팀 권한 부족(403)으로 거부되어 확정하지 못했습니다. 키 값은 조회·출력하지 않았습니다. 아래 2026-10-27 기록은 당시 확인 결과이며 현재 배포 SHA와 구분합니다.
+
+로컬 2단계 시험 5개와 `npm.cmd run build -- --local`이 통과했습니다. 이번 확인에서 실제 브라우저 카드 표시, 최신 배포 정적 응답의 메모 문장 검색, Supabase 공개 키 요청의 거부 여부는 재검사하지 않았습니다. 문서 정리의 커밋·푸시·재배포와 3단계 구현은 수행하지 않았습니다.
+
+정상 확인: Vercel **Deployments → 현재 Production → Visit**에서 자료실을 열고 네 카드를 확인합니다. 브라우저 개발자 도구 **Network**에서 `/api/notes` 200·4건을 확인하세요. 거부 확인: `/data.json`은 404, `/api/notes`의 GET 이외 요청은 405여야 합니다. Supabase 공개 클라이언트의 테이블 읽기는 거부되어야 하며 실제 심판 판정은 미확인입니다. 비로그인 `/api/notes`의 200은 현재 단계에서 확인된 공개 API 약점이며 3단계에서 다룹니다.
+
+### 이전 저장점 확인 (2026-10-27 KST)
 
 2026-10-27 KST 확인: 사용자가 제공한 SQL Editor 결과는 메모 4건, 미지정 소유자 4건, `owner_id=uuid`, RLS 활성화, 외래키·정책 0개, 두 클라이언트 역할의 SELECT 권한 없음입니다. 실제 Production `https://choi-bujang-secret-vault-five-blue.vercel.app`에서 `/api/notes`는 HTTP 200·4건, `/data.json`은 404, `/`는 200, `/aleph.json`은 단계 2·커밋 `fd0709bf012a4e76329509a062bad6e498f05eaa`로 확인했습니다. GitHub 최신 `main`도 같은 SHA입니다. 브라우저의 실제 네 카드 표시와 Supabase 공개 키 요청에 대한 심판 판정은 미확인입니다.
 
@@ -20,7 +42,7 @@ Supabase의 **SQL Editor → New query**에 SQL 전체를 붙여 넣고 **Run**�
 
 마지막 확인 쿼리의 예상 결과는 `note_count=4`, `unassigned_count=4`, `owner_id_type=uuid`, `rls_enabled=true`, `foreign_key_count=0`, `policy_count=0`, 두 `can_select=false`입니다. **Table Editor → training_notes**에서도 `owner_id`와 RLS를 확인하세요. 관리자 SQL Editor에서 자료를 볼 수 있는 것은 정상이며, `anon`·`authenticated`의 읽기는 거부되어야 합니다.
 
-로컬 정적 빌드 확인 명령: `npm.cmd run build -- --local` (PowerShell). 이 명령은 서버 함수를 실행하지 않습니다. 새 정적 출력에는 메모 문장과 키가 없어야 합니다. SQL 실행과 환경변수 설정 후 재배포하고 `/`에서 네 카드, `/api/notes`에서 네 자료, `/data.json`에서 404와 메모 부재, `/aleph.json`에서 현재 단계 2를 확인하세요. GET 이외의 함수 요청은 405로 거부합니다. 설정 누락은 503, DB 조회 실패는 502와 고정 오류 코드만 반환해야 합니다. Supabase에 대한 공개 키 요청의 차단은 심판이 확인하며, 로컬 모의 시험을 그 판정으로 보고하지 않습니다. 과거 Git 커밋과 이전 배포에는 1단계 공개 자료가 남습니다. DB 실행·원격 반영·실제 배포 점검은 아직 수행하지 않았습니다.
+로컬 정적 빌드 확인 명령: `npm.cmd run build -- --local` (PowerShell). 이 명령은 서버 함수를 실행하지 않습니다. 새 정적 출력에는 메모 문장과 키가 없어야 합니다. SQL 실행과 환경변수 설정 후 재배포하고 `/`에서 네 카드, `/api/notes`에서 네 자료, `/data.json`에서 404와 메모 부재, `/aleph.json`에서 현재 단계 2를 확인하세요. GET 이외의 함수 요청은 405로 거부합니다. 설정 누락은 503, DB 조회 실패는 502와 고정 오류 코드만 반환해야 합니다. Supabase에 대한 공개 키 요청의 차단은 심판이 확인하며, 로컬 모의 시험을 그 판정으로 보고하지 않습니다. 과거 Git 커밋과 이전 배포에는 1단계 공개 자료가 남습니다. DB 실행·원격 반영·실제 배포 점검의 확인 범위는 위 날짜별 기록을 따릅니다.
 
 ## 메모 문장 검색 절차와 결과 기록
 
@@ -76,7 +98,7 @@ Supabase의 **SQL Editor → New query**에 SQL 전체를 붙여 넣고 **Run**�
 
 저장점 점검(2026-10-27 KST): Production `/api/notes`에 인증 정보 없이 보낸 GET은 HTTP 200·4건이었습니다. 공개 읽기 약점이 실제로 확인됐으며, 응답 본문은 기록하지 않았습니다. 아래 미실행 기록은 이 저장점 점검 이전의 상태입니다.
 
-코드 확인 결과, `GET /api/notes`에는 로그인·소유자 확인이 없습니다. DB 설정과 네 건의 입력이 정상이라면 비로그인 요청으로 네 메모를 읽을 수 있습니다. 정적 파일 검색 0건은 이 공개 API의 노출을 해소하지 않습니다. 실제 배포의 비로그인 API 호출은 **미실행**이며, 실행 후에는 URL·시각·HTTP 상태·반환 건수만 기록하고 본문은 로그에 옮기지 않습니다. Supabase 공개 키 요청의 거부 여부는 심판 확인 대상으로 별도 기록합니다.
+코드 확인 결과, `GET /api/notes`에는 로그인·소유자 확인이 없습니다. 실제 비로그인 요청으로 네 메모를 읽을 수 있음을 위 날짜별 점검에서 확인했습니다. 정적 파일 검색 0건은 이 공개 API의 노출을 해소하지 않습니다. 점검 결과에는 URL·시각·HTTP 상태·반환 건수만 기록하고 본문은 로그에 옮기지 않습니다. Supabase 공개 키 요청의 거부 여부는 심판 확인 대상으로 별도 기록합니다.
 
 점검할 때는 로그인 정보가 없는 새 시크릿 창에서 배포의 `/api/notes`를 열어 상태와 반환 건수만 확인하세요. 응답 본문·요청 헤더·키를 README에 붙이지 않습니다.
 
