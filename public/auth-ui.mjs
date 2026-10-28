@@ -17,7 +17,7 @@ function failureReason(error) {
 }
 
 // Session state controls this screen only; it is not API authorization.
-export async function mountAuth(supabase, document) {
+export async function mountAuth(supabase, document, onSession = () => {}) {
   const form = document.getElementById('login-form');
   const email = document.getElementById('login-email');
   const password = document.getElementById('login-password');
@@ -35,6 +35,7 @@ export async function mountAuth(supabase, document) {
     status.textContent = signedIn
       ? `로그인됨 · ${session.user.email ?? '사용자'}` : '로그아웃 상태입니다.';
     if (!signedIn) password.value = '';
+    onSession(session);
   }
 
   function setBusy(value) {

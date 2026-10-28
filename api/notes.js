@@ -1,4 +1,7 @@
-// Stage 2: deliberately public. Authentication is added in a later stage.
+import config from '../aleph.config.json' with { type: 'json' };
+import { createLoginVerifier } from '../src/verify-login.mjs';
+
+let verifyLogin;
 // Credentials are sent only from this server to the configured Supabase API.
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -7,19 +10,35 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
+  const authorization = request.headers?.authorization;
+  if (typeof authorization !== 'string' || !authorization) {
+    response.setHeader('WWW-Authenticate', 'Bearer');
+    return response.status(401).json({ error: 'UNAUTHORIZED' });
+  }
+
   const { SUPABASE_URL, SUPABASE_SECRET_KEY } = process.env;
   let endpoint;
   try {
     const base = new URL(SUPABASE_URL);
     if (base.protocol !== 'https:' || base.username || base.password
-        || base.pathname !== '/' || base.search || base.hash || !SUPABASE_SECRET_KEY?.trim()) {
+        || base.pathname !== '/' || base.search || base.hash || !SUPABASE_SECRET_KEY?.trim()
+        || config.identityProvider?.issuer !== `${base.origin}/auth/v1`) {
       throw new Error('invalid_configuration');
     }
     endpoint = new URL('/rest/v1/training_notes', base);
     endpoint.searchParams.set('select', 'id,title,content');
     endpoint.searchParams.set('order', 'id.asc');
+    verifyLogin ??= createLoginVerifier({ config, supabaseSecretKey: SUPABASE_SECRET_KEY });
   } catch {
     return response.status(503).json({ error: 'NOTES_NOT_CONFIGURED' });
+  }
+
+  // Only the existing verifier may establish identity. Ignore client userId/role.
+  let identity;
+  try { identity = await verifyLogin(authorization); } catch { identity = null; }
+  if (!identity) {
+    response.setHeader('WWW-Authenticate', 'Bearer');
+    return response.status(401).json({ error: 'UNAUTHORIZED' });
   }
 
   try {

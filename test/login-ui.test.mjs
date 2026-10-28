@@ -10,6 +10,7 @@ async function screen({ initialSession = null, loginError = null, logoutError = 
     addEventListener(type, callback) { this[type] = callback; },
   }]));
   let changed;
+  const sessions = [];
   const auth = {
     onAuthStateChange(callback) { changed = callback; },
     async getSession() { return { data: { session: initialSession }, error: null }; },
@@ -17,7 +18,7 @@ async function screen({ initialSession = null, loginError = null, logoutError = 
       assert.equal(email, 'a@example.test');
       assert.equal(password, 'test-input-only');
       if (loginError) return { data: { session: null }, error: loginError };
-      const session = { user: { email } };
+      const session = { user: { email }, access_token: 'test-session-value' };
       changed('SIGNED_IN', session);
       return { data: { session }, error: null };
     },
@@ -28,14 +29,14 @@ async function screen({ initialSession = null, loginError = null, logoutError = 
       return { error: null };
     },
   };
-  await mountAuth({ auth }, { getElementById: id => elements[id] });
+  await mountAuth({ auth }, { getElementById: id => elements[id] }, session => sessions.push(session));
   elements['login-email'].value = ' a@example.test ';
   elements['login-password'].value = 'test-input-only';
-  return { elements, changed, submit: () => elements['login-form'].submit({ preventDefault() {} }) };
+  return { elements, changed, sessions, submit: () => elements['login-form'].submit({ preventDefault() {} }) };
 }
 
 test('login and logout change visible controls and clear the password field', async () => {
-  const { elements: e, submit } = await screen();
+  const { elements: e, submit, sessions } = await screen();
   assert.equal(e['login-form'].hidden, false);
   assert.equal(e['logout-button'].hidden, true);
   await submit();
@@ -43,10 +44,12 @@ test('login and logout change visible controls and clear the password field', as
   assert.equal(e['logout-button'].hidden, false);
   assert.match(e['auth-status'].textContent, /a@example\.test/);
   assert.equal(e['login-password'].value, '');
+  assert.equal(sessions.at(-1).access_token, 'test-session-value');
   await e['logout-button'].click();
   assert.equal(e['login-form'].hidden, false);
   assert.equal(e['logout-button'].hidden, true);
   assert.doesNotMatch(e['auth-status'].textContent, /a@example\.test/);
+  assert.equal(sessions.at(-1), null);
 });
 
 test('failed login shows a reason and keeps the login form available', async () => {
