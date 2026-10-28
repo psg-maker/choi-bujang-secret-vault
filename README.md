@@ -1,5 +1,15 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 3단계 저장점 (2026-10-28 KST)
+
+현재 구현은 Supabase 이메일 로그인·로그아웃, 서버 토큰 검증, UUID 메모 생성·목록·단건 조회·수정·삭제입니다. `identityProvider`와 GET/POST `/api/notes`, GET/PUT/DELETE `/api/notes/:id`의 `allowedRoutes`를 구현과 대조했습니다. `judgeIssuer`는 보존했고 `RULE_IDS`의 `starter.deny`는 실제 기본 거부 판정기와 일치합니다. 개별 메모의 소유자 검사와 B 계정 시험은 4단계에 남깁니다.
+
+Production `https://choi-bujang-secret-vault-five-blue.vercel.app`의 실제 배포는 `https://choi-bujang-secret-vault-kc17o9mue-psg-maker.vercel.app`, `/aleph.json`의 단계는 3, 커밋은 `93468f779d7604af8bb4c87205d7654c13ea2846`으로 확인했습니다. 비로그인 목록·추가·단건 조회·수정·삭제는 모두 401과 자료 없는 JSON 오류입니다. 첫 화면은 HTTP 200·`X-Content-Type-Options: nosniff`, `/aleph.json`은 200, `/data.json`은 404입니다. 빌드는 공개 data.json만 제거하며 배포용 aleph.json은 자동 생성합니다. 제공된 가점 조건 세 가지는 이 확인 범위에서 충족했으나 실제 심판 점수는 미확인입니다.
+
+다시 실행: `node --test test/*.test.mjs`, 로컬 정적 빌드는 `npm.cmd run build -- --local`입니다. 저장점 커밋 후 `npm.cmd run bundle`로 제출 JSON을 생성합니다. 3단계 자기 점검은 실제 보낸 비로그인 요청과 공개 응답·헤더만 기록하고, 정상 A 계정의 배포 CRUD는 미실행으로 표시합니다. 사용자의 로컬 시험 통과 보고와 실제 배포 계정 시험을 구분합니다. SQL 적용 결과·실제 A 계정 CRUD·삭제 후 실제 GET 404는 아직 독립적으로 확인하지 못했습니다.
+
+화면 확인: Vercel **Deployments → Production → Visit**에서 시크릿 창을 열고 A 로그인 후 **메모 추가 → 수정 → 삭제**, 로그아웃 후 자료·작성 폼이 사라지는지 확인하세요. 무로그인 API는 401 JSON 오류여야 합니다. 이 저장점은 문서·자기 점검 코드 변경이며 기능 배포 SHA와 저장점 SHA가 달라집니다. 이번 저장점의 푸시·재배포·실제 심판 제출은 수행하지 않았습니다. 아래 기록은 이전 제작 당시 상태로 보존합니다.
+
 ## 현재 작업: 3단계 로그인 사용자의 메모 CRUD (2026-10-28 KST)
 
 로그인 후 **내 가상 메모**에서 제목·본문을 입력하고 **메모 추가**를 누릅니다. 카드의 **수정**으로 한 건을 불러와 편집한 뒤 **수정 저장**, **삭제**로 지울 수 있습니다. 로그아웃 시 카드와 작성 중 입력을 지웁니다. 기존 로그인 안내문 수정과 다른 작업은 보존했습니다.
