@@ -21,7 +21,7 @@ function response() {
 test('real login verifier gates note queries and ignores client identities', async () => {
   const before = { fetch: globalThis.fetch, url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY };
   const serverKey = 'test-only-server-credential';
-  const rows = Array.from({ length: 4 }, (_, i) => ({ id: i + 1, title: `Title ${i}`, content: `Body ${i}`, owner_id: 'hidden' }));
+  const rows = Array.from({ length: 4 }, (_, i) => ({ id: `22222222-2222-4222-8222-22222222222${i}`, title: `Title ${i}`, body: `Body ${i}`, owner_id: 'hidden' }));
   let reads = 0;
   let upstreamFails = false;
   try {
@@ -31,8 +31,9 @@ test('real login verifier gates note queries and ignores client identities', asy
       if (String(url) === `${issuer}/.well-known/jwks.json`) return Response.json({ keys: [jwk] });
       reads += 1;
       assert.equal(url.origin, project);
-      assert.equal(url.pathname, '/rest/v1/training_notes');
-      assert.equal(url.searchParams.get('select'), 'id,title,content');
+      assert.equal(url.pathname, '/rest/v1/training_user_notes');
+      assert.equal(url.searchParams.get('select'), 'id,title,body');
+      assert.equal(url.searchParams.get('owner_id'), `eq.${userId}`);
       assert.equal(options.headers.apikey, serverKey);
       assert.equal(options.headers.authorization, undefined);
       assert.equal(options.redirect, 'error');
@@ -57,7 +58,7 @@ test('real login verifier gates note queries and ignores client identities', asy
     await handler(request, ok);
     assert.equal(ok.code, 200);
     assert.equal(reads, 1);
-    assert.deepEqual(ok.body.notes, rows.map(({ id, title, content }) => ({ id, title, content })));
+    assert.deepEqual(ok.body, rows.map(({ id, title, body }) => ({ id, title, body })));
     process.env.SUPABASE_URL = 'https://other.supabase.co';
     const wrongProject = response();
     await handler(request, wrongProject);
@@ -73,8 +74,9 @@ test('real login verifier gates note queries and ignores client identities', asy
     const missing = response();
     await handler(request, missing);
     assert.equal(missing.code, 503);
+    process.env.SUPABASE_SECRET_KEY = serverKey;
     const post = response();
-    await handler({ method: 'POST' }, post);
+    await handler({ ...request, method: 'PATCH' }, post);
     assert.equal(post.code, 405);
   } finally {
     globalThis.fetch = before.fetch;

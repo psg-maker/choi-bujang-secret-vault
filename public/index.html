@@ -20,7 +20,13 @@
     .auth { margin: 26px 0; padding: 22px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
     .auth h2 { margin: 0 0 12px; font-size: 22px; }
     .auth label { display: block; margin: 14px 0 6px; }
-    .auth input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #71869c; border-radius: 8px; background: #101a28; color: #ecf4ff; font: inherit; }
+    .auth input, .auth textarea { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #71869c; border-radius: 8px; background: #101a28; color: #ecf4ff; font: inherit; }
+    .auth textarea { min-height: 140px; resize: vertical; }
+    li span { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .note-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .note-actions button { padding: 8px 14px; border: 1px solid #71869c; border-radius: 7px; background: #263d53; color: #ecf4ff; font: inherit; cursor: pointer; }
+    .note-actions .delete-note { color: #ffbec8; }
+    .note-actions button:focus-visible { outline: 3px solid #8ad8df; outline-offset: 3px; }
     .auth button { margin-top: 16px; padding: 11px 20px; border: 0; border-radius: 8px; background: #8ad8df; color: #101a28; font: inherit; font-weight: 700; cursor: pointer; }
     .auth button:disabled { opacity: .5; cursor: wait; }
     .auth :focus-visible { outline: 3px solid #8ad8df; outline-offset: 3px; }
@@ -48,6 +54,20 @@
       <noscript><p>로그인하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
     </section>
     <div id="login-notice" class="notice">자료를 보려면 로그인해 주세요.</div>
+    <section id="note-editor" class="auth" aria-labelledby="note-heading" hidden>
+      <h2 id="note-heading">내 가상 메모</h2>
+      <p>실습용 가상 내용만 작성해 주세요.</p>
+      <form id="note-form">
+        <label for="note-title">제목</label>
+        <input id="note-title" name="title" maxlength="200" required>
+        <label for="note-body">본문</label>
+        <textarea id="note-body" name="body" maxlength="10000"></textarea>
+        <button id="note-save" type="submit">메모 추가</button>
+        <button id="note-cancel" type="button" hidden>수정 취소</button>
+      </form>
+      <p id="note-status" role="status" aria-live="polite"></p>
+      <p id="note-error" class="auth-error" role="alert"></p>
+    </section>
     <ul id="notes" aria-live="polite"><li>자료를 보려면 로그인해 주세요.</li></ul>
   </main>
   <script type="module" src="/login.mjs"></script>

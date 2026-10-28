@@ -9,7 +9,13 @@
     "audience": "authenticated",
     "jwksUrl": "https://dukaexggijwbynmthyvm.supabase.co/auth/v1/.well-known/jwks.json"
   },
-  "allowedRoutes": [],
+  "allowedRoutes": [
+    { "method": "GET", "path": "/api/notes" },
+    { "method": "POST", "path": "/api/notes" },
+    { "method": "GET", "path": "/api/notes/:id" },
+    { "method": "PUT", "path": "/api/notes/:id" },
+    { "method": "DELETE", "path": "/api/notes/:id" }
+  ],
   "originalApiUrl": null,
   "restoreRoute": null
 }
