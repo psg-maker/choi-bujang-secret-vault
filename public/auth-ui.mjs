@@ -25,6 +25,7 @@ export async function mountAuth(supabase, document, onSession = () => {}) {
   const logout = document.getElementById('logout-button');
   const status = document.getElementById('auth-status');
   const errorBox = document.getElementById('auth-error');
+  const notice = document.getElementById('login-notice');
   let busy = false;
   let revision = 0;
 
@@ -32,6 +33,7 @@ export async function mountAuth(supabase, document, onSession = () => {}) {
     const signedIn = Boolean(session?.user);
     form.hidden = signedIn;
     logout.hidden = !signedIn;
+    notice.hidden = signedIn;
     status.textContent = signedIn
       ? `로그인됨 · ${session.user.email ?? '사용자'}` : '로그아웃 상태입니다.';
     if (!signedIn) password.value = '';

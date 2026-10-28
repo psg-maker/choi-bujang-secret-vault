@@ -5,7 +5,7 @@ import { test } from 'node:test';
 async function screen({ initialSession = null, loginError = null, logoutError = null } = {}) {
   const { mountAuth } = await import('../public/auth-ui.mjs');
   const elements = Object.fromEntries(['login-form', 'login-email', 'login-password',
-    'login-submit', 'logout-button', 'auth-status', 'auth-error'].map(id => [id, {
+    'login-submit', 'logout-button', 'auth-status', 'auth-error', 'login-notice'].map(id => [id, {
     hidden: false, disabled: false, textContent: '', value: '',
     addEventListener(type, callback) { this[type] = callback; },
   }]));
@@ -39,9 +39,11 @@ test('login and logout change visible controls and clear the password field', as
   const { elements: e, submit, sessions } = await screen();
   assert.equal(e['login-form'].hidden, false);
   assert.equal(e['logout-button'].hidden, true);
+  assert.equal(e['login-notice'].hidden, false);
   await submit();
   assert.equal(e['login-form'].hidden, true);
   assert.equal(e['logout-button'].hidden, false);
+  assert.equal(e['login-notice'].hidden, true);
   assert.match(e['auth-status'].textContent, /a@example\.test/);
   assert.equal(e['login-password'].value, '');
   assert.equal(sessions.at(-1).access_token, 'test-session-value');
@@ -49,6 +51,7 @@ test('login and logout change visible controls and clear the password field', as
   assert.equal(e['login-form'].hidden, false);
   assert.equal(e['logout-button'].hidden, true);
   assert.doesNotMatch(e['auth-status'].textContent, /a@example\.test/);
+  assert.equal(e['login-notice'].hidden, false);
   assert.equal(sessions.at(-1), null);
 });
 
