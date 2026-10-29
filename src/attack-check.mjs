@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if (config.step === 3 || config.step === 4) {
+  if ([3, 4, 5].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;
@@ -57,18 +57,23 @@ export async function runAttackChecks(config) {
     });
     await probe('static_notes_absent', '과거 공개 data.json HTTP 404', '/data.json', async response => `HTTP ${response.status}`);
     results.push({ attackId: 'authenticated_note_crud', expected: 'A 계정의 생성·조회·수정·삭제와 삭제 후 404',
-      observed: config.step === 4
+      observed: config.step >= 4
         ? '이번 자동 점검에서는 미실행 (사용자 수행 시험 결과와 범위는 README 저장점 기록 참조)'
         : '미실행 (실제 A 계정 배포 CRUD는 별도 확인 필요, 로컬 시험으로 대체하지 않음)' });
-    if (config.step === 4) {
+    if (config.step >= 4) {
       for (const [attackId, expected] of [
         ['cross_owner_access', 'A/B 상대 메모 GET·PUT·DELETE는 404이며 기존 행 보존'],
         ['owner_change', '자기 메모의 owner_id를 상대 UID로 바꾸는 PUT은 403이며 기존 행 보존'],
-        ['database_rls', 'authenticated A/B 정상 CRUD 허용, 상대 행 접근·소유자 변경 거부'],
+        ...(config.step === 4 ? [['database_rls', 'authenticated A/B 정상 CRUD 허용, 상대 행 접근·소유자 변경 거부']] : []),
       ]) {
         results.push({ attackId, expected,
           observed: '이번 자동 점검에서는 미실행 (사용자 수행 시험 결과와 범위는 README 저장점 기록 참조)' });
       }
+    }
+    if (config.step === 5) {
+      results.push({ attackId: 'original_api_anon_access',
+        expected: '원본 자료 API의 anon 키 직접 요청은 자료 없이 거부',
+        observed: '이번 자동 점검에서는 미실행 (사용자 DB 권한 확인은 README 참조, 실제 anon 키 요청과 심판 판정은 미확인)' });
     }
     return results;
   }

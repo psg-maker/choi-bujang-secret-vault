@@ -3,6 +3,29 @@ import { test } from 'node:test';
 import { runAttackChecks } from '../src/attack-check.mjs';
 
 const config = { step: 3, publicAppUrl: 'https://vault.vercel.app' };
+test('step 5 self-check leaves original anon-key access unexecuted and keeps account checks honest', async () => {
+  const original = fetch;
+  const seen = [];
+  try {
+    globalThis.fetch = async url => {
+      seen.push(url.origin);
+      if (url.pathname === '/aleph.json') return Response.json({ step: 4, commit: 'c'.repeat(40) });
+      if (url.pathname === '/') return new Response('', { headers: { 'X-Content-Type-Options': 'nosniff' } });
+      if (url.pathname === '/data.json') return new Response('', { status: 404 });
+      return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    };
+    const checks = await runAttackChecks({ ...config, step: 5,
+      originalApiUrl: 'https://project.supabase.co/rest/v1/training_user_notes' });
+    assert.equal(seen.length, 8);
+    assert.ok(seen.every(origin => origin === 'https://vault.vercel.app'));
+    for (const id of ['authenticated_note_crud', 'cross_owner_access', 'owner_change', 'original_api_anon_access']) {
+      assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
+    }
+    assert.equal(checks.some(x => x.attackId === 'database_rls'), false);
+    assert.match(checks.find(x => x.attackId === 'deployment_identity').expected, /단계 5/);
+  } finally { globalThis.fetch = original; }
+});
+
 test('step 3 self-check measures actual JSON rejections, identity and security header without retaining bodies', async () => {
   const original = fetch;
   const seen = [];

@@ -1,5 +1,19 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 5단계 저장점 (2026-10-29 KST)
+
+메모 목록·단건 읽기·추가·수정·삭제는 기존 `/api/notes`와 `/api/notes/:id` 서버 함수로 모여 있습니다. 브라우저의 Supabase 직접 자료 호출은 없으며 Auth 호출, 서버 로그인 검증·소유자 검사·서버 전용 환경변수는 유지했습니다. 이전 가상 메모와 다른 테이블은 변경하지 않았습니다.
+
+사용자는 학습 DB에서 `public.training_user_notes`의 PUBLIC·anon·authenticated 테이블 및 열 권한 회수 SQL을 실행했다고 보고했습니다. 마지막 제공 결과는 anon·authenticated의 SELECT·INSERT·UPDATE·REFERENCES 열 유효 권한이 모두 false이며, 제공된 전체 ACL 결과에는 postgres·service_role만 있고 service_role CRUD는 유지됩니다. 초기 authenticated=true 결과와 최종 false 결과를 구분합니다. 이후 배포 화면 A의 추가·조회·수정·삭제 정상 동작을 사용자에게 확인받았습니다. 실제 A 계정 시험이나 DB SQL은 에이전트가 독립 재실행하지 않았으며 원본 anon 키 직접 요청과 실제 심판 판정은 미확인입니다.
+
+재현용 `supabase/step5-revoke-note-access.sql`은 해당 메모 테이블만 대상으로 권한 회수와 전후 확인 쿼리를 보관합니다. 사용자가 실행한 SQL을 바탕으로 보관한 파일이며 이 파일 자체를 DB에 다시 실행하지 않았습니다. 기존 RLS 정책·자료·service_role 권한은 유지합니다. 이전 `step3-user-notes.sql`은 과거 기록으로 보존하며 현재 상태 확인을 위해 재실행할 필요가 없습니다.
+
+설정 대조: 로컬 `step=5`, 운영 주소와 identityProvider issuer·audience·JWKS는 기존 서버 검증과 일치하며 allowedRoutes는 GET/POST `/api/notes`, GET/PUT/DELETE `/api/notes/:id`입니다. `originalApiUrl`은 서버가 사용하는 쿼리 없는 HTTPS 원본 `https://dukaexggijwbynmthyvm.supabase.co/rest/v1/training_user_notes`입니다. judgeIssuer는 보존했고 RULE_IDS는 실제 기본 거부 규칙 `starter.deny` 하나입니다. 저장점 준비 중 공개 `/aleph.json` 조회 결과는 HTTP 200·단계 4·커밋 `d4641f1c6f01390e434b66827f0ca818e3fca09c`입니다. 로컬 5단계와 현재 배포 식별 정보는 다르며 이번 작업에서 푸시·재배포는 하지 않습니다.
+
+다시 실행: `node --test test/*.test.mjs`, `npm.cmd run build -- --local`. 저장점 커밋 후 `npm.cmd run bundle`로 `artifacts/submission.json`을 생성합니다. 자기 점검은 실제 비로그인 다섯 API 요청·공개 배포 식별·보안 헤더·과거 data.json만 조회합니다. 정상 계정 CRUD·상대 소유자 접근·소유자 변경·원본 anon 키 요청은 자동 점검 미실행으로 남기며 사용자 보고와 구분합니다. 번들 생성 성공은 심판 통과가 아닙니다.
+
+화면 확인: Vercel **Deployments → Production → Visit**에서 A 로그인 후 **메모 추가 → 조회 → 수정 → 삭제**가 정상이어야 합니다. 비로그인은 401, 타인 단건 접근은 404, 소유자 변경 PUT은 403이어야 합니다. 원본 anon 키 직접 요청은 자료 없이 거부되어야 하며 실제 심판 확인으로 남깁니다. 비밀값·연락처·메모 본문은 제출 JSON에 넣지 않습니다. 아래 1~4단계 기록은 당시 상태로 보존합니다.
+
 ## 4단계 저장점 (2026-10-29 KST)
 
 현재 구현은 이메일 로그인·로그아웃, 서버 토큰 검증, UUID 메모 CRUD와 계정별 소유자 제한입니다. 목록과 단건 GET·PUT·DELETE는 검증된 사용자 ID와 `training_user_notes.owner_id`가 일치하는 행만 처리하며 상대 행은 404입니다. POST는 확인된 ID로 소유자를 지정하고 URL·본문의 소유자 값을 신뢰하지 않습니다. PUT은 `{title,body}`만 저장해 기존 소유자를 유지하며 다른 `owner_id` 지정은 403입니다. 단건 응답은 `{id,title,body}`입니다.
