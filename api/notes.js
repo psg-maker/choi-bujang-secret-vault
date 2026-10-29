@@ -64,6 +64,11 @@ export default async function handler(request, response) {
         || input.title.length > 200 || typeof input.body !== 'string' || input.body.length > 10000) {
       return response.status(400).json({ error: 'INVALID_NOTE' });
     }
+    if (request.method === 'PUT' && Object.hasOwn(input, 'owner_id')
+        && input.owner_id !== identity.userId) {
+      return response.status(403).json({ error: 'OWNER_CHANGE_FORBIDDEN' });
+    }
+    // PUT only writes title/body, so the new row keeps the existing owner.
     payload = { title: input.title.trim(), body: input.body };
     if (request.method === 'POST') {
       if (input.id !== undefined && (typeof input.id !== 'string' || !UUID.test(input.id))) {
@@ -78,7 +83,8 @@ export default async function handler(request, response) {
   endpoint.searchParams.set('select', 'id,title,body');
   if (id) {
     endpoint.searchParams.set('id', `eq.${id}`);
-    // Stage 3 intentionally lacks an ownership check for individual operations.
+    // Check the existing owner in the same DB operation to avoid a check/write race.
+    endpoint.searchParams.set('owner_id', `eq.${identity.userId}`);
   } else if (request.method === 'GET') {
     endpoint.searchParams.set('owner_id', `eq.${identity.userId}`);
     endpoint.searchParams.set('order', 'created_at.desc,id.asc');
