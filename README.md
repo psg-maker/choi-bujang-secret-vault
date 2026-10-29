@@ -1,5 +1,21 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 4단계 저장점 (2026-10-29 KST)
+
+현재 구현은 이메일 로그인·로그아웃, 서버 토큰 검증, UUID 메모 CRUD와 계정별 소유자 제한입니다. 목록과 단건 GET·PUT·DELETE는 검증된 사용자 ID와 `training_user_notes.owner_id`가 일치하는 행만 처리하며 상대 행은 404입니다. POST는 확인된 ID로 소유자를 지정하고 URL·본문의 소유자 값을 신뢰하지 않습니다. PUT은 `{title,body}`만 저장해 기존 소유자를 유지하며 다른 `owner_id` 지정은 403입니다. 단건 응답은 `{id,title,body}`입니다.
+
+사용자 수행 배포 시험: A의 조회·수정, B 목록에서 A 메모 비노출, 상대 메모 GET·PUT·DELETE의 404, A/B 기존 메모 보존과 소유자 변경 PUT의 403을 보고받았습니다. 각 계정의 API 전체 정상 CRUD를 이번 저장점에서 에이전트가 독립 재실행한 것은 아닙니다. Supabase SQL Editor의 사용자 제공 결과는 적용 전 두 역할의 권한 없음, 적용 후 anon 권한 없음·authenticated CRUD 네 권한만 허용입니다. authenticated 역할로 A/B를 전환한 DB 시험에서는 정상 CRUD와 상대 행 조회·수정·삭제·소유자 위조 INSERT·소유자 변경 UPDATE 차단의 PASS를 확인했고 시험 자료는 ROLLBACK했습니다. 이는 사용자 수행 학습 시험이며 실제 심판 판정은 아닙니다.
+
+권한·RLS는 사용자가 `public.training_user_notes`에 직접 적용했습니다. SELECT·DELETE는 USING, INSERT는 WITH CHECK, UPDATE는 USING과 WITH CHECK로 `auth.uid()=owner_id`를 제한합니다. 현재 서버 API는 서버 전용 키를 사용하므로 API 소유자 검사와 사용자 역할의 DB RLS 시험을 구분합니다. 이전 `training_notes`의 A 네 건·B 한 건은 별도 자료이며 현재 API로 이전하지 않았습니다. `supabase/step3-user-notes.sql`은 이전 단계 SQL로 보존하며, 현재 권한을 재현하려고 다시 실행하면 authenticated 권한이 회수됩니다. 이번 저장점에서는 DB SQL·API를 추가 변경하지 않습니다.
+
+설정 대조: `aleph.config.json.step=4`, 운영 주소 `https://choi-bujang-secret-vault-five-blue.vercel.app`, identityProvider의 Supabase issuer·authenticated audience·JWKS 주소와 서버 구현이 일치합니다. allowedRoutes는 GET/POST `/api/notes`, GET/PUT/DELETE `/api/notes/:id`입니다. judgeIssuer는 보존했고 `RULE_IDS=['starter.deny']`는 실제 기본 거부 판정기와 일치합니다. 5단계 원본 API는 아직 사용하지 않습니다.
+
+저장점 전 실제 Production은 Vercel 조회에서 READY, 배포 URL `https://choi-bujang-secret-vault-nzz9c1yg0-psg-maker.vercel.app`, 기능 커밋 `d3d4018005e17a9806a49da772c17ed597a1c55f`입니다. 공개 `/aleph.json`도 HTTP 200·같은 커밋·단계 3으로 확인했습니다. 로컬 단계 4와 배포 단계 3은 현재 다르며 저장점 푸시·재배포 전에는 동일하다고 쓰지 않습니다.
+
+다시 실행: `node --test test/*.test.mjs` (24개 통과), `npm.cmd run build -- --local` (통과). 저장점 커밋 후 `npm.cmd run bundle`로 `artifacts/submission.json`을 생성합니다. 4단계 자기 점검은 실제 비로그인 다섯 API 요청, 배포 식별·보안 헤더·과거 공개 data.json만 자동 조회합니다. 계정 CRUD·상호 접근·소유자 변경·DB RLS는 이번 자동 점검에서 미실행으로 표시하고 위 사용자 시험 기록과 구분합니다. 비밀값·이메일·메모 본문은 제출 JSON에 넣지 않습니다.
+
+화면 확인: 배포 후 Vercel **Deployments → 최신 Production → Visit**에서 일반 창·시크릿 창으로 A/B 로그인 후 **메모 추가 → 수정 → 삭제**를 확인합니다. 정상 계정은 자기 행을 처리하고 상대 메모 GET·PUT·DELETE는 404, 소유자 변경은 403, 비로그인은 401이어야 합니다. 이번 저장점 요청은 로컬 커밋·제출 JSON 생성까지이며 푸시·재배포·실제 심판 제출은 실행하지 않습니다. 아래 1~3단계 기록은 당시 상태로 보존합니다.
+
 ## 3단계 저장점 (2026-10-28 KST)
 
 현재 구현은 Supabase 이메일 로그인·로그아웃, 서버 토큰 검증, UUID 메모 생성·목록·단건 조회·수정·삭제입니다. `identityProvider`와 GET/POST `/api/notes`, GET/PUT/DELETE `/api/notes/:id`의 `allowedRoutes`를 구현과 대조했습니다. `judgeIssuer`는 보존했고 `RULE_IDS`의 `starter.deny`는 실제 기본 거부 판정기와 일치합니다. 개별 메모의 소유자 검사와 B 계정 시험은 4단계에 남깁니다.

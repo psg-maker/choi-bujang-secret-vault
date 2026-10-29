@@ -39,3 +39,23 @@ test('HTML rejections and connection failures are not reported as verified JSON 
     assert.ok(!JSON.stringify(failed).includes('DO_NOT_RECORD'));
   } finally { globalThis.fetch = original; }
 });
+
+test('step 4 self-check preserves deployed identity and does not invent authenticated or RLS results', async () => {
+  const original = fetch;
+  try {
+    globalThis.fetch = async url => {
+      if (url.pathname === '/aleph.json') return Response.json({ step: 3, commit: 'b'.repeat(40) });
+      if (url.pathname === '/') return new Response('', { headers: { 'X-Content-Type-Options': 'nosniff' } });
+      if (url.pathname === '/data.json') return new Response('', { status: 404 });
+      return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    };
+    const checks = await runAttackChecks({ ...config, step: 4 });
+    const identity = checks.find(x => x.attackId === 'deployment_identity');
+    assert.match(identity.expected, /단계 4/);
+    assert.match(identity.observed, /단계 3/);
+    for (const id of ['authenticated_note_crud', 'cross_owner_access', 'owner_change', 'database_rls']) {
+      assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
+    }
+    assert.equal(checks.filter(x => x.attackId.startsWith('anonymous_note_')).length, 5);
+  } finally { globalThis.fetch = original; }
+});
