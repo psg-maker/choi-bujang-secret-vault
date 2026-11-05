@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if ([3, 4, 5].includes(config.step)) {
+  if ([3, 4, 5, 6, 7].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;
@@ -70,10 +70,22 @@ export async function runAttackChecks(config) {
           observed: '이번 자동 점검에서는 미실행 (사용자 수행 시험 결과와 범위는 README 저장점 기록 참조)' });
       }
     }
-    if (config.step === 5) {
+    if (config.step >= 5) {
       results.push({ attackId: 'original_api_anon_access',
         expected: '원본 자료 API의 anon 키 직접 요청은 자료 없이 거부',
         observed: '이번 자동 점검에서는 미실행 (사용자 DB 권한 확인은 README 참조, 실제 anon 키 요청과 심판 판정은 미확인)' });
+    }
+    if (config.step >= 6) {
+      results.push(
+        { attackId: 'registered_device_live', expected: '등록 기기에서 기존 자료실 정상 접근',
+          observed: '이번 자동 점검에서는 미실행 (실제 기기 접속과 로컬 가상 판정을 구분)' },
+        { attackId: 'unregistered_device_live', expected: '실제 미등록 기기 접근 거부',
+          observed: '미실행 (실제 미등록 기기 공격은 심판 담당, 가상 요청 시험으로 대체하지 않음)' },
+      );
+    }
+    if (config.step >= 7) {
+      results.push({ attackId: 'step_up_live', expected: '복합 이상 접속은 확인 전 자료 차단, 같은 계정 새 로그인 뒤 요청 재판정',
+        observed: '미실행 (새 로그인과 추가 확인 요청을 연결하는 계약·실제 릴레이 검증 미확인)' });
     }
     return results;
   }

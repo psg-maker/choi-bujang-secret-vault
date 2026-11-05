@@ -3,6 +3,27 @@ import { test } from 'node:test';
 import { runAttackChecks } from '../src/attack-check.mjs';
 
 const config = { step: 3, publicAppUrl: 'https://vault.vercel.app' };
+test('step 7 self-check reports deployment mismatch and leaves engine-only checks unexecuted', async () => {
+  const original = fetch;
+  let requests = 0;
+  try {
+    globalThis.fetch = async url => {
+      requests++;
+      if (url.pathname === '/aleph.json') return Response.json({ step: 6, commit: 'c'.repeat(40) });
+      if (url.pathname === '/') return new Response('', { headers: { 'X-Content-Type-Options': 'nosniff' } });
+      if (url.pathname === '/data.json') return new Response('', { status: 404 });
+      return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
+    };
+    const checks = await runAttackChecks({ ...config, step: 7 });
+    assert.equal(requests, 8);
+    assert.match(checks.find(x => x.attackId === 'deployment_identity').observed, /단계 6/);
+    for (const id of ['original_api_anon_access', 'registered_device_live',
+      'unregistered_device_live', 'step_up_live']) {
+      assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
+    }
+  } finally { globalThis.fetch = original; }
+});
+
 test('step 5 self-check leaves original anon-key access unexecuted and keeps account checks honest', async () => {
   const original = fetch;
   const seen = [];

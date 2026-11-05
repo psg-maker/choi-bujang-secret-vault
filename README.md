@@ -1,6 +1,30 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 7단계 저장점 (2026-11-05 KST)
+
+기존 로그인·본인 메모 CRUD·소유자 제한을 유지합니다. 판정기는 등록 기기만 허용하고, 엔진 계약의 가상 출처 `judge_fixture`에서 0~5시·낯선 네트워크·최근 60초 내 `risk_signal` 20건 이상이 함께 있는 자료실 GET은 `step_up`·`step_up_required`로 추가 확인을 요청합니다. 지역만으로 차단하지 않으며 클라이언트 헤더와 출처 불명·누락 정보를 정상 근거로 채택하지 않습니다. 실제 구현 규칙 목록은 `device_registered`, `step_up_required` 두 개입니다.
+
+설정 대조: `aleph.config.json.step=7`, 배포 도메인과 Git origin은 기존 자료실로 유지했습니다. identityProvider의 Supabase issuer·authenticated audience·JWKS는 서버 로그인 검증과 일치합니다. allowedRoutes는 GET/POST `/api/notes`, GET/PUT/DELETE `/api/notes/:id`이며 originalApiUrl은 서버가 사용하는 `/rest/v1/training_user_notes`의 쿼리 없는 HTTPS 주소입니다. judgeIssuer는 변경하지 않았습니다. 이번 공개 `/aleph.json` 조회는 HTTP 200·단계 6·커밋 `aee6c1e555d58d666295140418f6880cd756eb64`로, 로컬 7단계와 다릅니다. 이번 요청에서 푸시·재배포는 하지 않습니다.
+
+다시 실행: `node --test test/*.test.mjs` (31개 통과), `npm.cmd run fixture:7` (정상 allow·복합 이상 step_up), `npm.cmd run decider:test` (가상 점검 4개 통과), `npm.cmd run build -- --local` (통과). 사용자도 같은 fixture:7 결과를 확인했다고 보고했습니다. 새 복사본의 의존성 설치는 이번 저장점에서 재시험하지 않았습니다. 이 결과는 실제 심판 판정이 아닙니다.
+
+저장점 커밋 후 `npm.cmd run bundle`로 `artifacts/submission.json`을 생성합니다. 자기 점검은 실제 비로그인 다섯 API 요청·공개 배포 식별·보안 헤더·과거 data.json을 조회합니다. 계정 CRUD·타인 접근·소유자 변경·원본 anon 키 직접 요청·실제 등록/미등록 기기 접속·재로그인 전 차단 및 새 로그인 뒤 허용은 이번 자동 점검에서 미실행으로 남깁니다. 같은 계정의 새 로그인을 추가 확인 요청에 연결하는 계약과 실제 자료 차단은 아직 검증하지 않았습니다. 토큰·개인키·연락처·자료 본문은 제출 JSON에 넣지 않으며 `bundle-notes.json`과 제출 JSON은 커밋하지 않습니다.
+
+화면 확인: 지금은 VS Code **터미널 → 새 터미널**에서 위 명령을 실행합니다. 추후 배포하면 Vercel **Deployments → 최신 Production → Visit**에서 `/aleph.json`의 단계 7과 커밋을 확인합니다. 정상 가상 사건은 allow, 미등록 기기는 deny/device_not_registered, 복합 사건은 step_up/step_up_required여야 합니다. 실제 재인증 화면 시험은 계약이 준비된 환경에서만 진행합니다. 아래 내용은 각 작업 당시의 기록입니다.
+
+## 7단계 가상 사건과 재로그인 계약 확인 (2026-11-05 KST)
+
+제공된 `docs/DECIDER_REQUEST.md`에는 `subjectId`와 `stepUp: {verified, authAgeSeconds}`가 있지만, 같은 주체의 새 로그인을 원래 추가 확인 요청에 연결하고 차단·해제 후 새 요청을 재판정하는 절차는 명시되어 있지 않습니다. 계약도 이 값만으로 재인증 확인 요청을 건너뛰지 말라고 명시합니다. 이 폴더의 로그인 검증기는 새 로그인 시각을 판정기에 전달하지 않으며 자료 API와 추가 확인 흐름도 연결되어 있지 않습니다. 운영 엔진 원본은 이 폴더에 없어 별도로 검증하지 않았습니다.
+
+따라서 이번에는 가상 사건만 시험했습니다. 등록 기기의 정상 요청은 `allow`, 0~5시·`unusual` 네트워크·최근 60초 내 `risk_signal` 20건 이상이 함께 있는 자료실 GET은 `step_up`·`step_up_required`입니다. 지역만으로 차단하지 않고 미등록 기기는 기존대로 `deny`·`device_not_registered`입니다. `stepUp.verified=true`만으로 복합 사건을 허용하지 않습니다.
+
+다시 확인: VS Code **터미널 → 새 터미널**에서 `npm.cmd run fixture:7`을 실행합니다. 이번 실행에서 정상 사건 `allow`·복합 이상 사건 `step_up`을 확인했고, `npm.cmd run decider:test`의 네 가상 점검도 통과했습니다. 실제 재인증 화면에서 누를 곳은 아직 확인할 수 없습니다.
+
+**미실행:** 재로그인 전 실제 자료 차단, 같은 계정의 새 로그인 시각 확인, 새 요청 재판정·허용 실측, 운영 심판 시험. 해당 연결 계약이 제공된 환경에서만 이 순서를 실측합니다. 토큰 원문·비밀번호·자료 본문은 기록하지 않습니다. 설정 단계는 6으로 유지하며 아래 기록은 각 작업 당시의 결과입니다.
+
 ## 6단계 기기 등록 규칙 확인 (2026-11-05 KST)
+
+후속 사용자 확인: 배포 `/aleph.json`의 단계 6 반영과 6단계 확인 항목의 정상 통과를 보고받았습니다. 로컬 설정도 `step=6`입니다. 이는 사용자 확인 기록이며 에이전트가 실제 접속·심판 판정을 독립 재실행한 결과는 아닙니다.
 
 `src/decider.mjs`는 `deviceRegistered === true`이면 `allow`·`approved`, 미등록·값 누락이면 `deny`·`device_not_registered`를 반환합니다. 아래 1~5단계 기록은 당시 상태로 보존합니다.
 
@@ -23,6 +47,8 @@
    ```
 
 이는 로컬 가상 요청 연습입니다. 실제 미등록 기기 공격은 심판이 맡으며, 이번에 배포·실제 릴레이 접속·심판 시험은 실행하지 않았습니다. 판정 규칙과 기존 기능은 이번 문서 작업에서 변경하지 않았습니다.
+
+7단계 준비 — 입력 검사: `inspectConnection(request)`는 엔진 계약의 `signals`·`recentEvents`만 검사합니다. `source=judge_fixture`는 가상 시험 정보이고 실제 위치 증거가 아닙니다. `none`은 접속 신호 없음, 그 외 출처는 `unknown`으로 구분합니다. 출처가 없거나 불명확한 정보, 누락·형식 오류 항목은 `null`로 남기며 정상 지역·시간·네트워크·빈 행동 배열로 보충하지 않습니다. 클라이언트 헤더는 읽지 않습니다. 아직 `decide()`에 이상 접속·재확인 규칙을 연결하지 않았으며 6단계 판정은 유지합니다. 확인은 VS Code **터미널 → 새 터미널**에서 `node --test test/decider.test.mjs`를 실행합니다. 가상 정보는 가상 출처로 보존되고, 위조 헤더는 접속 근거로 채택되지 않으며 미등록 기기는 계속 거부되어야 합니다.
 
 ## 5단계 저장점 (2026-10-29 KST)
 
