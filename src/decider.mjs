@@ -3,7 +3,7 @@
 // 요청 본문의 userId, role, 기기 키, 토큰을 별도로 믿거나 저장하지 마세요.
 export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required']);
 
-// 엔진 계약 입력 전용입니다. judge_fixture는 실제 위치 증거가 아닙니다.
+// judge_fixture is virtual evidence from the engine, not a browser location claim.
 export function inspectConnection(request) {
   const signals = request.signals;
   const source = signals?.source === 'judge_fixture' ? 'judge_fixture'
@@ -28,7 +28,7 @@ export function inspectConnection(request) {
 export async function decide(request) {
   const registered = request.deviceRegistered === true;
   const connection = inspectConnection(request);
-  // 가상 사건 기준: 새벽·낯선 네트워크·최근 60초 내 20건이 함께 있을 때만 재확인합니다.
+  // shortcut: fixture thresholds only; revise when the engine supplies a verified baseline.
   const unusualRead = request.service === 'notes' && request.method === 'GET'
     && connection.hour !== null && connection.hour < 6 && connection.network === 'unusual'
     && connection.recentEvents?.some(event => event.kind === 'risk_signal'

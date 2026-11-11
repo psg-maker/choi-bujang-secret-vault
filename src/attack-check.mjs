@@ -76,16 +76,14 @@ export async function runAttackChecks(config) {
         observed: '이번 자동 점검에서는 미실행 (사용자 DB 권한 확인은 README 참조, 실제 anon 키 요청과 심판 판정은 미확인)' });
     }
     if (config.step >= 6) {
-      results.push(
-        { attackId: 'registered_device_live', expected: '등록 기기에서 기존 자료실 정상 접근',
-          observed: '이번 자동 점검에서는 미실행 (실제 기기 접속과 로컬 가상 판정을 구분)' },
-        { attackId: 'unregistered_device_live', expected: '실제 미등록 기기 접근 거부',
-          observed: '미실행 (실제 미등록 기기 공격은 심판 담당, 가상 요청 시험으로 대체하지 않음)' },
-      );
+      results.push({ attackId: 'device_access_live',
+        expected: '등록 기기 허용·미등록 기기 거부',
+        observed: '미실행 (실제 기기 접근은 로컬 가상 요청 시험으로 대체하지 않음)' });
     }
     if (config.step >= 7) {
-      results.push({ attackId: 'step_up_live', expected: '복합 이상 접속은 확인 전 자료 차단, 같은 계정 새 로그인 뒤 요청 재판정',
-        observed: '미실행 (새 로그인과 추가 확인 요청을 연결하는 계약·실제 릴레이 검증 미확인)' });
+      results.push({ attackId: 'step_up_live',
+        expected: '추가 확인 전 자료 차단·같은 계정 새 로그인 검증 뒤 새 요청 재판정',
+        observed: '미실행 (새 로그인 연결 계약 미제공·로컬 시험과 채점 기준 충돌 미해결)' });
     }
     return results;
   }
