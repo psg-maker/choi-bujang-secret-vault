@@ -48,10 +48,26 @@ test('compound fixture reads request confirmation and preserve device denial', a
     ruleIds: ['device_registered', 'step_up_required'],
   });
   assert.equal((await decide({ ...suspicious, deviceRegistered: false })).decision, 'deny');
-  // The current contract does not bind this flag to a fresh login for this challenge.
-  assert.equal((await decide({ ...suspicious,
-    stepUp: { verified: true, authAgeSeconds: 60 },
-  })).decision, 'step_up');
+});
+
+test('verified fixture confirmation within 900 seconds permits only registered devices', async () => {
+  const { suspicious } = fixtureRequests();
+  for (const authAgeSeconds of [0, 60, 900]) {
+    const request = { ...suspicious, stepUp: { verified: true, authAgeSeconds } };
+    assert.equal((await decide(request)).decision, 'allow');
+    assert.equal((await decide({ ...request, deviceRegistered: false })).decision, 'deny');
+  }
+});
+
+test('missing, unverified or invalid confirmation keeps unusual fixtures at step_up', async () => {
+  const { suspicious } = fixtureRequests();
+  for (const stepUp of [undefined, null, {},
+    { verified: false, authAgeSeconds: 60 },
+    { verified: 'true', authAgeSeconds: 60 },
+    ...[undefined, null, -1, 901, '60', NaN, Infinity].map(authAgeSeconds => (
+      { verified: true, authAgeSeconds }
+    )),
+  ]) assert.equal((await decide({ ...suspicious, stepUp })).decision, 'step_up');
 });
 
 test('region alone and partial or malformed evidence do not trigger the compound rule', async () => {

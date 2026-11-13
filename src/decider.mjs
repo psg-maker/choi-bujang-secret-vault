@@ -33,7 +33,10 @@ export async function decide(request) {
     && connection.hour !== null && connection.hour < 6 && connection.network === 'unusual'
     && connection.recentEvents?.some(event => event.kind === 'risk_signal'
       && event.ageSeconds <= 60 && event.count >= 20);
-  if (registered && unusualRead) {
+  const confirmed = request.stepUp?.verified === true
+    && Number.isFinite(request.stepUp.authAgeSeconds)
+    && request.stepUp.authAgeSeconds >= 0 && request.stepUp.authAgeSeconds <= 900;
+  if (registered && unusualRead && !confirmed) {
     return {
       schema: 'aleph.decision.v1',
       requestId: request.requestId,
