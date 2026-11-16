@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { generateKeyPair, exportJWK, SignJWT } from 'jose';
+import { signToken } from '../src/device-auth.mjs';
 import handler from '../api/notes.js';
 
 const project = 'https://dukaexggijwbynmthyvm.supabase.co';
@@ -23,12 +24,20 @@ test('real login verifier gates note queries and ignores client identities', asy
   const serverKey = 'test-only-server-credential';
   const rows = Array.from({ length: 4 }, (_, i) => ({ id: `22222222-2222-4222-8222-22222222222${i}`, title: `Title ${i}`, body: `Body ${i}`, owner_id: userId }));
   let reads = 0;
+  const deviceId = '33333333-3333-4333-8333-3333333333a1';
+  const approvedDevices = new Set([deviceId]);
+  const deviceToken = (sub = userId, id = deviceId, exp = Math.floor(Date.now() / 1000) + 300) =>
+    signToken({ purpose: 'device', sub, deviceId: id, exp }, serverKey);
   let upstreamFails = false;
   try {
     process.env.SUPABASE_URL = project;
     process.env.SUPABASE_SECRET_KEY = serverKey;
     globalThis.fetch = async (url, options) => {
       if (String(url) === `${issuer}/.well-known/jwks.json`) return Response.json({ keys: [jwk] });
+      if (url.pathname === '/rest/v1/training_devices') {
+        // Approved only when the stored test device matches the one in the token.
+        return Response.json(approvedDevices.has(url.searchParams.get('id')?.replace('eq.', '')) ? [{ id: url.searchParams.get('id').replace('eq.', '') }] : []);
+      }
       reads += 1;
       assert.equal(url.origin, project);
       assert.equal(url.pathname, '/rest/v1/training_user_notes');
@@ -53,7 +62,15 @@ test('real login verifier gates note queries and ignores client identities', asy
       assert.equal(res.headers['Cache-Control'], 'no-store');
     }
     assert.equal(reads, 0);
-    const request = { method: 'GET', headers: { authorization: `Bearer ${await sign()}` } };
+    // A verified login alone is not enough: no, foreign, expired, forged or unapproved device token is 403 with no note read.
+    for (const token of [undefined, deviceToken('99999999-9999-4999-8999-999999999999'), deviceToken(userId, deviceId, 1),
+      deviceToken(userId, '33333333-3333-4333-8333-3333333333ff'), `${deviceToken().slice(0, -2)}xx`]) {
+      const denied = response();
+      await handler({ method: 'GET', headers: { authorization: `Bearer ${await sign()}`, ...(token ? { 'x-device-token': token } : {}) } }, denied);
+      assert.deepEqual([denied.code, denied.body], [403, { error: 'DEVICE_NOT_APPROVED' }]);
+    }
+    assert.equal(reads, 0);
+    const request = { method: 'GET', headers: { authorization: `Bearer ${await sign()}`, 'x-device-token': deviceToken() } };
     const ok = response();
     await handler(request, ok);
     assert.equal(ok.code, 200);

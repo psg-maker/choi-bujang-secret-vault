@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import config from '../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../src/verify-login.mjs';
+import { approvedDevice } from '../src/device-auth.mjs';
 
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/iu;
 let verifyLogin;
@@ -31,6 +32,13 @@ export default async function handler(request, response) {
   if (!identity) {
     response.setHeader('WWW-Authenticate', 'Bearer');
     return response.status(401).json({ error: 'UNAUTHORIZED' });
+  }
+  try {
+    if (!await approvedDevice({ identity, headers: request.headers, base: endpoint, secretKey: SUPABASE_SECRET_KEY })) {
+      return response.status(403).json({ error: 'DEVICE_NOT_APPROVED' });
+    }
+  } catch {
+    return response.status(502).json({ error: 'NOTES_UNAVAILABLE' });
   }
 
   let id;

@@ -9,6 +9,7 @@ export function createNotesView(document, fetchNotes = fetch) {
   const errorBox = document.getElementById('note-error');
   const status = document.getElementById('note-status');
   let token;
+  let deviceToken = null;
   let generation = 0;
   let loadVersion = 0;
   let pending;
@@ -38,10 +39,12 @@ export function createNotesView(document, fetchNotes = fetch) {
   async function api(path, method = 'GET', body, accessToken = token) {
     const response = await fetchNotes(path, {
       method, cache: 'no-store', headers: { Authorization: `Bearer ${accessToken}`,
+        ...(deviceToken ? { 'X-Device-Token': deviceToken } : {}),
         ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     if (response.status === 401) throw new Error('로그인 확인에 실패했습니다. 다시 로그인해 주세요.');
+    if (response.status === 403) throw new Error('기기 승인이 확인되지 않았습니다. 위의 「승인 확인」을 다시 눌러 주세요.');
     if (response.status === 404) throw new Error('메모가 없습니다. 목록을 새로 확인해 주세요.');
     if (response.status === 409) throw new Error('같은 ID의 메모가 이미 있습니다.');
     if (response.status === 400 || response.status === 415) throw new Error('제목과 본문 입력을 확인해 주세요.');
@@ -143,8 +146,10 @@ export function createNotesView(document, fetchNotes = fetch) {
 
   return function updateNotes(session) {
     const nextToken = session?.access_token ?? null;
-    if (nextToken === token) return pending;
+    const nextDevice = session?.device_token ?? null;
+    if (nextToken === token && nextDevice === deviceToken) return pending;
     token = nextToken;
+    deviceToken = nextDevice;
     generation++;
     loadVersion++;
     setBusy(false);

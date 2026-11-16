@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BYTE BACK | 자료실</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#101a28">
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
@@ -39,6 +42,12 @@
     <div class="eyebrow">BYTE BACK · 3단계 로그인 확인</div>
     <h1>자료실</h1>
     <p>가상 자료를 공개 파일에서 분리했습니다.</p>
+    <section id="app-status" class="auth" aria-labelledby="app-status-heading">
+      <h2 id="app-status-heading">앱·기기 상태</h2>
+      <p id="app-install" role="status">앱 실행 상태를 확인하는 중입니다.</p>
+      <p id="app-network" role="status" aria-live="polite">연결 상태를 확인하는 중입니다.</p>
+      <p id="app-device">기기 승인: 로그인 뒤 「기기 승인」 칸에서 서버가 확인합니다. 앱으로 설치했다고 기기 승인이 끝난 것은 아닙니다.</p>
+    </section>
     <section class="auth" aria-labelledby="auth-heading">
       <h2 id="auth-heading">계정 로그인</h2>
       <p id="auth-status" role="status" aria-live="polite">로그인 상태를 확인하는 중입니다.</p>
@@ -52,6 +61,14 @@
       <button id="logout-button" type="button" hidden>로그아웃</button>
       <p id="auth-error" class="auth-error" role="alert"></p>
       <noscript><p>로그인하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+    </section>
+    <section id="device-gate" class="auth" aria-labelledby="device-heading" hidden>
+      <h2 id="device-heading">기기 승인</h2>
+      <p id="device-status" role="status" aria-live="polite">기기 승인 상태: 확인 전</p>
+      <p>「이 기기 승인 요청」은 이 기기의 패스키를 서버에 대기 상태로 등록합니다. 요청만으로는 자료실이 열리지 않으며, 관리자가 승인한 뒤 「승인 확인」으로 서버가 확인해야 열립니다.</p>
+      <button id="device-register" type="button">이 기기 승인 요청</button>
+      <button id="device-check" type="button">승인 확인</button>
+      <p id="device-error" class="auth-error" role="alert"></p>
     </section>
     <div id="login-notice" class="notice">자료를 보려면 로그인해 주세요.</div>
     <section id="note-editor" class="auth" aria-labelledby="note-heading" hidden>
@@ -70,6 +87,7 @@
     </section>
     <ul id="notes" aria-live="polite"><li>자료를 보려면 로그인해 주세요.</li></ul>
   </main>
+  <script type="module" src="/app-status.mjs"></script>
   <script type="module" src="/login.mjs"></script>
 </body>
 </html>

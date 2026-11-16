@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { generateKeyPair, exportJWK, SignJWT } from 'jose';
+import { signToken } from '../src/device-auth.mjs';
 import handler from '../api/notes.js';
 
 const project = 'https://dukaexggijwbynmthyvm.supabase.co';
@@ -23,12 +24,18 @@ test('authenticated CRUD follows UUID contract and server-owned owner_id; anonym
   const otherToken = await new SignJWT({ role: 'authenticated' }).setProtectedHeader({ alg: 'ES256', kid: jwk.kid })
     .setIssuer(`${project}/auth/v1`).setAudience('authenticated').setSubject(otherUserId).setExpirationTime('5m').sign(privateKey);
   const rows = new Map();
+  const deviceA = '33333333-3333-4333-8333-3333333333a1';
+  const deviceB = '33333333-3333-4333-8333-3333333333b1';
+  const approvedDevices = new Set([deviceA, deviceB]);
+  const exp = Math.floor(Date.now() / 1000) + 300;
+  const deviceTokens = new Map([[token, signToken({ purpose: 'device', sub: userId, deviceId: deviceA, exp }, 'test-only-server-credential')],
+    [otherToken, signToken({ purpose: 'device', sub: otherUserId, deviceId: deviceB, exp }, 'test-only-server-credential')]]);
   let queries = 0;
   let lastOwner;
   const send = async (method, path = '', body, authenticated = true, accessToken = token) => {
     const res = response();
     await handler({ method, url: `/api/notes${path}`, body,
-      headers: { ...(authenticated ? { authorization: `Bearer ${accessToken}` } : {}), 'content-type': 'application/json' } }, res);
+      headers: { ...(authenticated ? { authorization: `Bearer ${accessToken}`, 'x-device-token': deviceTokens.get(accessToken) } : {}), 'content-type': 'application/json' } }, res);
     return res;
   };
   try {
@@ -37,6 +44,10 @@ test('authenticated CRUD follows UUID contract and server-owned owner_id; anonym
     globalThis.fetch = async (input, options = {}) => {
       const url = new URL(input);
       if (url.pathname.endsWith('/.well-known/jwks.json')) return Response.json({ keys: [jwk] });
+      if (url.pathname === '/rest/v1/training_devices') {
+        // Approved only when the stored test device matches the one in the token.
+        return Response.json(approvedDevices.has(url.searchParams.get('id')?.replace('eq.', '')) ? [{ id: url.searchParams.get('id').replace('eq.', '') }] : []);
+      }
       queries++;
       assert.equal(url.pathname, '/rest/v1/training_user_notes');
       assert.equal(options.headers.apikey, 'test-only-server-credential');
