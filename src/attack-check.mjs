@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if ([3, 4, 5, 6, 7, 8, 9].includes(config.step)) {
+  if ([3, 4, 5, 6, 7, 8, 9, 10].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;
@@ -95,6 +95,13 @@ export async function runAttackChecks(config) {
       results.push({ attackId: 'burst_revocation_live',
         expected: '같은 사용자 10분 안 GET 121건 이상만 회수 제안, 120건 이하·느린 조회·여러 사용자는 관찰',
         observed: '미실행 (detect:test 가상 사건 연습만 실행, 운영 엔진 사건 전달·접속 회수 미연결)' });
+    }
+    if (config.step >= 10) {
+      await probe('anonymous_note_restore', '비로그인 복구 POST는 401/403과 자료 없는 JSON 오류',
+        '/api/restore/b10c0000-0000-4000-8000-0000000000b1', denial, 'POST');
+      results.push({ attackId: 'note_restore_live',
+        expected: 'B 복구 200·ID·소유자·해시 일치, A의 B 메모 복구 404, 다른 메모 보존',
+        observed: '이번 자동 점검에서는 미실행 (계정 요청 필요, 사용자 수행 결과는 README 복구 표 참조)' });
     }
     return results;
   }

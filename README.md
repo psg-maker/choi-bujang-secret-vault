@@ -1,12 +1,19 @@
 # BYTE BACK 방어전 시작 틀 R5
 
-## 10단계 작업 중: 백업에서 자료실을 되살립니다 (2026-11-16 KST)
+## 10단계 저장점: 백업에서 자료실을 되살립니다 (2026-11-16 KST)
 
 - **복구 대상**: 시험 계정 B의 가상 메모 한 건, ID `b10c0000-0000-4000-8000-0000000000b1`
 - **서비스·경로**: 서비스 `restore`, `POST /api/restore/:id` (`api/restore/[id].js`)
-- **비공개 사본**: Supabase `training_note_backups` 테이블. 서버 키로만 읽고 anon·authenticated는 읽지 못합니다. `supabase/step10-note-backup.sql`에서 `B_TEST_EMAIL`을 B 계정 이메일로 바꿔 SQL Editor에서 실행합니다(이메일은 커밋하지 않음, 미실행).
+- **비공개 사본**: Supabase `training_note_backups` 테이블. 서버 키로만 읽고 anon·authenticated는 읽지 못합니다. `supabase/step10-note-backup.sql`에서 `B_TEST_EMAIL`을 B 계정 이메일로 바꿔 SQL Editor에서 실행합니다(이메일은 커밋하지 않음). 사용자가 실행해 결과(사본 1건, anon·authenticated 읽기 권한 없음)를 확인했습니다.
 - **대조**: 로그인한 사용자가 사본의 소유자일 때만, 사본의 내용 해시(`SHA-256(title + 줄바꿈 + body)`)가 맞을 때만, 운영 표의 같은 ID가 다른 사람 것이 아닐 때만 그 한 건을 덮어씁니다. 쓴 뒤 ID·소유자·해시가 사본과 같은지 다시 확인합니다. 다른 메모는 지우거나 읽지 않고, 감사 로그에는 메모 ID·해시·시각만 남깁니다.
 - **안전 정책 사본**: `npm.cmd run policy:snapshot|verify|drill|diff|restore`로 판정기·`allowedRoutes`·DB 접근 SQL의 커밋 `595e472` 사본과 해시를 검증하고, 시험 정책만 미리보기 뒤 `--yes`로 되돌립니다.
+- **설정**: 단계 10, `restoreRoute`는 `POST /api/restore/:id`. 발급자·배포 주소·`allowedRoutes`·원본 API·`judgeIssuer`는 보존했습니다. 판정기 구역 규칙은 바꾸지 않았으므로 엔진을 거치는 `POST /restore/:id`는 `route_not_allowed`입니다(엔진의 복구 경로 등록 방식은 미확인).
+- **안전 정책 사본과의 차이**: 이 저장점에서 `aleph.config.json`의 `step`·`restoreRoute`를 바꿨으므로 이후 `policy:diff`는 이 두 줄을 차이로 보여 줍니다. 접근 규칙(`allowedRoutes`·판정기·DB SQL)은 사본과 같습니다. 아래 표 0-2의 `변경 범위: 없음`은 이 변경 전 결과입니다.
+- **다시 확인**: VS Code **터미널 → 새 터미널**에서 `node --test test/*.test.mjs`, `npm.cmd run policy:verify`. `npm.cmd run bundle`의 자기 점검은 비로그인 요청(표 1·2·3-1·8-2 비로그인, 비로그인 복구 POST)만 실제로 보내고 계정이 필요한 줄은 미실행으로 남깁니다.
+
+## 9단계 저장점 이후 (2026-11-16 KST)
+
+커밋 `595e472`를 푸시했고 공개 `aleph.json`이 단계 9·같은 커밋으로 바뀐 것을 확인했습니다. 새 커밋 없이 다시 만든 제출 묶음에서 비로그인 메모·공지 요청은 401, 배포 식별은 단계 9였습니다. 9단계 제출 결과는 사용자에게서 받지 못해 기록하지 않습니다.
 
 ### 복구 뒤 다시 실행할 순서
 
@@ -14,23 +21,23 @@
 
 | 순서 | 무엇을 | 실행 | 정상이면 | 결과 |
 |---|---|---|---|---|
-| 0-1 | 정책 사본 무결성 | `npm.cmd run policy:verify` | `사본 검증 통과 · 파일 5개 해시 일치` | 미실행 |
-| 0-2 | 정책이 돌아왔는가 | `npm.cmd run policy:diff` | `변경 범위: 없음` | 미실행 |
-| 0-3 | 자료가 돌아왔는가 | B 로그인 → `POST /api/restore/b10c0000-0000-4000-8000-0000000000b1` | 200, `restored: true`, `contentSha256`이 사본 해시와 같음 | 미실행 |
-| 0-4 | 복구 대상만 바뀌었는가 | B 로그인 → `GET /api/notes/b10c…b1` 그리고 B의 다른 메모 | 대상은 사본 제목·본문, 다른 메모는 그대로 | 미실행 |
-| 1 | 공개 자료 노출 | 비로그인 `GET /data.json` | 404 | 미실행 |
-| 2 | 비로그인 목록 | 비로그인 `GET /api/notes` | 401 JSON 오류, 자료 없음 | 미실행 |
+| 0-1 | 정책 사본 무결성 | `npm.cmd run policy:verify` | `사본 검증 통과 · 파일 5개 해시 일치` | npm.cmd run 사본 검증 통과 · 커밋 595e472 · 파일 5개 해시 일치 |
+| 0-2 | 정책이 돌아왔는가 | `npm.cmd run policy:diff` | `변경 범위: 없음` | npm.cmd run policy:diff 변경 범위: 없음 (모든 정책 파일 해시 일치) |
+| 0-3 | 자료가 돌아왔는가 | B 로그인 → `POST /api/restore/b10c0000-0000-4000-8000-0000000000b1` | 200, `restored: true`, `contentSha256`이 사본 해시와 같음 | 사용자 확인 (2026-11-16, 배포 `64e6177`): 200 · `restored: true` · `ownerMatched: true` · 해시 `8cc849a8…eeec5ff`가 사본 제목·본문으로 계산한 값과 같음 |
+| 0-4 | 복구 대상만 바뀌었는가 | B 로그인 → `GET /api/notes/b10c…b1` 그리고 B의 다른 메모 | 대상은 사본 제목·본문, 다른 메모는 그대로 | 대상: 사용자 확인 (2026-11-16) 200 · 제목·본문이 사본과 같음. B의 다른 메모 보존: 사용자 확인 — 목록 200, 복구 대상 + 원래 있던 메모 1건 (제목은 기록 생략) |
+| 1 | 공개 자료 노출 | 비로그인 `GET /data.json` | 404 | 사용자 확인 (2026-11-16, 브라우저 주소창): 404 NOT_FOUND |
+| 2 | 비로그인 목록 | 비로그인 `GET /api/notes` | 401 JSON 오류, 자료 없음 | 사용자 확인 (2026-11-16, 브라우저 주소창): `{"error":"UNAUTHORIZED"}`, 자료 없음 (상태 코드는 화면에 표시되지 않음) |
 | 3-1 | 비로그인 쓰기·단건 | 비로그인 `POST /api/notes`, `GET·PUT·DELETE /api/notes/:id` | 모두 401 | 미실행 |
 | 3-2 | 로그인 정상 요청 | A 로그인 → 자기 메모 추가·조회·수정·삭제 | 201·200·200·204, 삭제 후 404 | 미실행 |
 | 4-1 | 다른 사람 메모 | B 로그인 → A 메모 ID로 `GET·PUT·DELETE` | 모두 404, A 메모 보존 | 미실행 |
 | 4-2 | 소유자 바꾸기 | A 로그인 → 자기 메모 `PUT`에 `owner_id: B` | 403 `OWNER_CHANGE_FORBIDDEN` | 미실행 |
 | 5 | 원본 DB 직접 접근 | 공개 anon 키로 `training_user_notes` 직접 요청 (Supabase SQL Editor 권한 확인으로 대체 가능) | 자료 없이 거부, anon 권한 없음 | 미실행 |
-| 6 | 미등록 기기 | `npm.cmd run decider:test` | `등록 기기의 정상 요청`·`미등록 기기의 가상 요청` 통과 (`allow` / `deny`) | 미실행 |
-| 7 | 복합 이상 접속 | `npm.cmd run fixture:7` | `정상 사건: allow`, `복합 이상 사건: step_up` | 미실행 |
-| 8-1 | 구역 규칙 | `node --test test/decider.test.mjs` | 메모 단건·공지 읽기 `allow`, 메모 전체 목록·공지 쓰기·강사 자료 `deny` | 미실행 |
-| 8-2 | 공지 API | 비로그인 `GET /api/notices` 그리고 로그인 `POST /api/notices` | 401 그리고 405 | 미실행 |
-| 9 | 폭주 조회 회수 | `npm.cmd run detect:test` | 6개 통과 (121건·200건만 `propose_revocation`) | 미실행 |
-| 10 | 남의 메모 복구 시도 | A 로그인 → `POST /api/restore/b10c…b1` | 404, B 메모 변화 없음 | 미실행 |
+| 6 | 미등록 기기 | `npm.cmd run decider:test` | `등록 기기의 정상 요청`·`미등록 기기의 가상 요청` 통과 (`allow` / `deny`) | 사용자 확인 (2026-11-16): 4개 모두 통과 |
+| 7 | 복합 이상 접속 | `npm.cmd run fixture:7` | `정상 사건: allow`, `복합 이상 사건: step_up` | 사용자 확인 (2026-11-16): 정상 사건 allow · 복합 이상 사건 step_up |
+| 8-1 | 구역 규칙 | `node --test test/decider.test.mjs` | 메모 단건·공지 읽기 `allow`, 메모 전체 목록·공지 쓰기·강사 자료 `deny` | 사용자 확인 (2026-11-16): 전체 통과 |
+| 8-2 | 공지 API | 비로그인 `GET /api/notices` 그리고 로그인 `POST /api/notices` | 401 그리고 405 | 로그인 `POST`: 사용자 확인 (2026-11-16) 405 Method Not Allowed. 비로그인 `GET`: 사용자 확인 (2026-11-16, 브라우저 주소창) 401 Unauthorized · `{"error":"UNAUTHORIZED"}` |
+| 9 | 폭주 조회 회수 | `npm.cmd run detect:test` | 6개 통과 (121건·200건만 `propose_revocation`) | 사용자 확인 (2026-11-16): 6개 모두 통과 |
+| 10 | 남의 메모 복구 시도 | A 로그인 → `POST /api/restore/b10c…b1` | 404, B 메모 변화 없음 | 사용자 확인 (2026-11-16, A 로그인): 404 `NOT_FOUND`. 요청 뒤 B 로그인 재조회: 200 · 복구 대상 + 원래 메모 1건으로 요청 전과 같음 |
 
 0번 줄이 하나라도 기대와 다르면 1~10번을 진행하지 말고 그 결과부터 기록합니다. 6~9번과 8-1번은 가상 요청 연습이라 실제 심판 판정이 아닙니다.
 
