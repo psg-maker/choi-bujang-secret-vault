@@ -1,0 +1,12 @@
+{
+  "schema": "policy-backup.v1",
+  "commit": "595e47224c8853af19a06c65d3560bf904798caf",
+  "createdAt": "2026-11-16T00:50:30.735Z",
+  "files": {
+    "src/decider.mjs": "89925f639c456c87918547e6c6a607f98e539a09ca3e9ec37f441acc1ac2b1bc",
+    "aleph.config.json": "a9a6c82d9e652631ca5922fbd3c04eaf1ef14f53a7dc06ebb0cf32869c13b7b4",
+    "supabase/step3-user-notes.sql": "06f93d207affd083249d51933a7066ae9d0d11a7154a6fc30722ce8263a4fdd3",
+    "supabase/step5-revoke-note-access.sql": "ba4a5dfdfd06caa7bb78c046695ed3ec33e94bfeabb3666bc59584ac2f66c019",
+    "supabase/step8-instructor-notices.sql": "47c0b45bc296fc410f4c9d11e901fd8510f7842f7f643a078ce18fd1ea125ae7"
+  }
+}

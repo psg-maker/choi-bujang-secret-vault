@@ -1,5 +1,41 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 10단계 작업 중: 백업에서 자료실을 되살립니다 (2026-11-16 KST)
+
+- **복구 대상**: 시험 계정 B의 가상 메모 한 건, ID `b10c0000-0000-4000-8000-0000000000b1`
+- **서비스·경로**: 서비스 `restore`, `POST /api/restore/:id` (`api/restore/[id].js`)
+- **비공개 사본**: Supabase `training_note_backups` 테이블. 서버 키로만 읽고 anon·authenticated는 읽지 못합니다. `supabase/step10-note-backup.sql`에서 `B_TEST_EMAIL`을 B 계정 이메일로 바꿔 SQL Editor에서 실행합니다(이메일은 커밋하지 않음, 미실행).
+- **대조**: 로그인한 사용자가 사본의 소유자일 때만, 사본의 내용 해시(`SHA-256(title + 줄바꿈 + body)`)가 맞을 때만, 운영 표의 같은 ID가 다른 사람 것이 아닐 때만 그 한 건을 덮어씁니다. 쓴 뒤 ID·소유자·해시가 사본과 같은지 다시 확인합니다. 다른 메모는 지우거나 읽지 않고, 감사 로그에는 메모 ID·해시·시각만 남깁니다.
+- **안전 정책 사본**: `npm.cmd run policy:snapshot|verify|drill|diff|restore`로 판정기·`allowedRoutes`·DB 접근 SQL의 커밋 `595e472` 사본과 해시를 검증하고, 시험 정책만 미리보기 뒤 `--yes`로 되돌립니다.
+
+### 복구 뒤 다시 실행할 순서
+
+복구를 마친 뒤 위에서부터 차례로 실행하고, 결과 칸에는 **실제로 본 값만** 적습니다. 실행하지 않은 줄은 `미실행`으로 둡니다. 로컬 명령은 VS Code **터미널 → 새 터미널**, 배포 요청은 배포 주소의 브라우저 개발자 도구나 `npm.cmd run bundle`의 자기 점검으로 확인합니다. A·B는 학습용 시험 계정입니다.
+
+| 순서 | 무엇을 | 실행 | 정상이면 | 결과 |
+|---|---|---|---|---|
+| 0-1 | 정책 사본 무결성 | `npm.cmd run policy:verify` | `사본 검증 통과 · 파일 5개 해시 일치` | 미실행 |
+| 0-2 | 정책이 돌아왔는가 | `npm.cmd run policy:diff` | `변경 범위: 없음` | 미실행 |
+| 0-3 | 자료가 돌아왔는가 | B 로그인 → `POST /api/restore/b10c0000-0000-4000-8000-0000000000b1` | 200, `restored: true`, `contentSha256`이 사본 해시와 같음 | 미실행 |
+| 0-4 | 복구 대상만 바뀌었는가 | B 로그인 → `GET /api/notes/b10c…b1` 그리고 B의 다른 메모 | 대상은 사본 제목·본문, 다른 메모는 그대로 | 미실행 |
+| 1 | 공개 자료 노출 | 비로그인 `GET /data.json` | 404 | 미실행 |
+| 2 | 비로그인 목록 | 비로그인 `GET /api/notes` | 401 JSON 오류, 자료 없음 | 미실행 |
+| 3-1 | 비로그인 쓰기·단건 | 비로그인 `POST /api/notes`, `GET·PUT·DELETE /api/notes/:id` | 모두 401 | 미실행 |
+| 3-2 | 로그인 정상 요청 | A 로그인 → 자기 메모 추가·조회·수정·삭제 | 201·200·200·204, 삭제 후 404 | 미실행 |
+| 4-1 | 다른 사람 메모 | B 로그인 → A 메모 ID로 `GET·PUT·DELETE` | 모두 404, A 메모 보존 | 미실행 |
+| 4-2 | 소유자 바꾸기 | A 로그인 → 자기 메모 `PUT`에 `owner_id: B` | 403 `OWNER_CHANGE_FORBIDDEN` | 미실행 |
+| 5 | 원본 DB 직접 접근 | 공개 anon 키로 `training_user_notes` 직접 요청 (Supabase SQL Editor 권한 확인으로 대체 가능) | 자료 없이 거부, anon 권한 없음 | 미실행 |
+| 6 | 미등록 기기 | `npm.cmd run decider:test` | `등록 기기의 정상 요청`·`미등록 기기의 가상 요청` 통과 (`allow` / `deny`) | 미실행 |
+| 7 | 복합 이상 접속 | `npm.cmd run fixture:7` | `정상 사건: allow`, `복합 이상 사건: step_up` | 미실행 |
+| 8-1 | 구역 규칙 | `node --test test/decider.test.mjs` | 메모 단건·공지 읽기 `allow`, 메모 전체 목록·공지 쓰기·강사 자료 `deny` | 미실행 |
+| 8-2 | 공지 API | 비로그인 `GET /api/notices` 그리고 로그인 `POST /api/notices` | 401 그리고 405 | 미실행 |
+| 9 | 폭주 조회 회수 | `npm.cmd run detect:test` | 6개 통과 (121건·200건만 `propose_revocation`) | 미실행 |
+| 10 | 남의 메모 복구 시도 | A 로그인 → `POST /api/restore/b10c…b1` | 404, B 메모 변화 없음 | 미실행 |
+
+0번 줄이 하나라도 기대와 다르면 1~10번을 진행하지 말고 그 결과부터 기록합니다. 6~9번과 8-1번은 가상 요청 연습이라 실제 심판 판정이 아닙니다.
+
+참고(복구 전 로컬 상태, 2026-11-16): 이 문서를 쓰기 전에 에이전트가 로컬 `node --test test/*.test.mjs` 38개 통과와 `policy:diff`의 `변경 범위: 없음`을 확인했습니다. 복구 뒤 결과가 아니므로 위 표에는 반영하지 않았습니다.
+
 ## 9단계 저장점: 도플갱어를 찾고 권한을 거둡니다 (2026-11-16 KST)
 
 `src/detect.mjs`는 사건마다 `at`·`method`·`identity.sub` 세 값만 읽고, 형식이 틀린 사건은 채우지 않고 뺍니다. 메모 본문·토큰·실명·네트워크·기기·지역 값은 읽지도 출력하지도 않습니다. `burst_read` 규칙은 같은 `sub`의 `GET`이 `at` 기준 10분 구간 `[t, t+10분)` 안에서 120건을 넘을 때만 `{action:'propose_revocation', reasonCode:'burst_read', subject}`를, 그 밖에는 `{action:'observe'}`를 돌려줍니다. 정확히 120건·10분 밖 사건·다른 사용자 합산은 의심이 아닙니다. 기준을 넘은 사용자가 여럿이면 처음 찾은 한 명만 돌려줍니다. 판정기 응답 형식·API·기기 권한은 바꾸지 않았고 회수 API는 만들지 않았습니다.

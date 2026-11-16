@@ -1,0 +1,20 @@
+{
+  "step": 9,
+  "repoUrl": "https://github.com/psg-maker/choi-bujang-secret-vault",
+  "publicAppUrl": "https://choi-bujang-secret-vault-five-blue.vercel.app",
+  "sampleMarker": "SAMPLE_NOTE_1",
+  "judgeIssuer": "https://aleph-judge-production.up.railway.app/defense/judge",
+  "identityProvider": {
+    "issuer": "https://dukaexggijwbynmthyvm.supabase.co/auth/v1",
+    "audience": "authenticated",
+    "jwksUrl": "https://dukaexggijwbynmthyvm.supabase.co/auth/v1/.well-known/jwks.json"
+  },
+  "allowedRoutes": [
+    "GET /api/notes/:id",
+    "PUT /api/notes/:id",
+    "DELETE /api/notes/:id",
+    "GET /api/notices"
+  ],
+  "originalApiUrl": "https://dukaexggijwbynmthyvm.supabase.co/rest/v1/training_user_notes",
+  "restoreRoute": null
+}
