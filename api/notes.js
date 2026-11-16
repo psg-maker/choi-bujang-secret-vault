@@ -80,7 +80,7 @@ export default async function handler(request, response) {
     }
   }
 
-  endpoint.searchParams.set('select', 'id,title,body');
+  endpoint.searchParams.set('select', 'id,title,body,owner_id');
   if (id) {
     endpoint.searchParams.set('id', `eq.${id}`);
     // Check the existing owner in the same DB operation to avoid a check/write race.
@@ -105,6 +105,10 @@ export default async function handler(request, response) {
     if (!Array.isArray(rows) || rows.some(row => !row || !UUID.test(row.id)
         || typeof row.title !== 'string' || typeof row.body !== 'string')) throw new Error('invalid_notes');
     if (id && !rows.length) return response.status(404).json({ error: 'NOT_FOUND' });
+    // Re-check the stored owner against the verified login, not the query filter alone.
+    if (rows.some(row => row.owner_id !== identity.userId)) {
+      return response.status(403).json({ error: 'OWNER_MISMATCH' });
+    }
     if (request.method === 'DELETE') return response.status(204).end();
     if (request.method === 'POST') {
       if (rows.length !== 1 || rows[0].id !== payload.id) throw new Error('invalid_insert');

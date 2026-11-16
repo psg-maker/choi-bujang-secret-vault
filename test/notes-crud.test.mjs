@@ -63,7 +63,7 @@ test('authenticated CRUD follows UUID contract and server-owned owner_id; anonym
         const owner = url.searchParams.get('owner_id')?.replace('eq.', '');
         result = [...rows.values()].filter(row => !owner || row.owner_id === owner);
       }
-      return Response.json(result.map(({ id, title, body }) => ({ id, title, body })));
+      return Response.json(result.map(({ id, title, body, owner_id }) => ({ id, title, body, owner_id })));
     };
     for (const [method, path] of [['GET', ''], ['POST', ''], ['GET', `/${noteId}`], ['PUT', `/${noteId}`], ['DELETE', `/${noteId}`]]) {
       assert.equal((await send(method, path, { title: 'Synthetic', body: 'Synthetic' }, false)).code, 401);

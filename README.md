@@ -1,5 +1,15 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 8단계 저장점: 자료마다 갈 수 있는 구역 (2026-11-16 KST)
+
+`src/decider.mjs`의 `resource_zone` 규칙이 엔진이 확인한 서비스·메서드·경로 모양으로 구역을 나눕니다. 메모는 `GET`·`PUT`·`DELETE /notes/:id`만 허용하고 ID 없는 목록·생성은 거부합니다. 반 공지는 `GET /notices`만 허용하고, 강사 자료·알 수 없는 경로·쿼리가 붙은 요청·`:id` 아래 기능 경로는 `deny/route_not_allowed`입니다. ID 형식은 판정기에서 좁히지 않습니다. 등록 기기 규칙과 7단계 추가 확인 규칙은 유지합니다.
+
+새 읽기 전용 `GET /api/notices`는 로그인한 사용자에게 `training_instructor_notices` 테이블을 보여 주고 쓰기는 405로 거부합니다. 테이블은 `supabase/step8-instructor-notices.sql`을 SQL Editor에서 실행해 만듭니다(미실행). `/api/notes`는 DB에 저장된 `owner_id`를 확인된 로그인과 다시 대조해 다르면 `403 OWNER_MISMATCH`를 돌려줍니다. 강사 명단이 없어 공지 쓰기 관리 경로는 만들지 않았습니다. `allowedRoutes`는 `GET /api/notes/:id` 형식의 4개 경로입니다.
+
+7단계 기록 정정: 커밋 `5ab51ef`에서 `stepUp.verified=true`·0~900초면 등록 기기 `allow`로 바뀌어 `npm.cmd run decider:test` 4개가 모두 통과합니다. 아래 7단계 기록의 ‘마지막 시험 실패’는 그 이전 상태입니다.
+
+VS Code **터미널 → 새 터미널**에서 `node --test test/*.test.mjs`로 다시 확인합니다. 현재 화면은 `GET /api/notes` 목록을 쓰므로 릴레이를 거치면 목록이 거부될 수 있습니다. `route_not_allowed`가 운영 허용 이유 코드에 등록됐는지, 실제 `service` 이름이 `notices`·`materials`인지는 미확인입니다. 배포·공지 SQL·심판 시험은 미실행입니다.
+
 ## 7단계 재진행 (2026-11-11 KST, 제출 전)
 
 엔진 계약의 `signals`와 `recentEvents`만 검사합니다. `judge_fixture`는 가상 출처이며, 누락·불명 출처·형식 오류는 정상 정보로 채우지 않습니다. 클라이언트 헤더는 근거로 쓰지 않습니다. 기존 등록 기기 규칙을 유지하고, 가상 자료실 GET에서 0~5시·`unusual` 네트워크·최근 60초 내 단일 `risk_signal` 20건 이상이 함께 있을 때 `step_up/step_up_required`를 반환합니다. 지역만으로 차단하지 않습니다. 시간 기준과 사건 기준은 제공 가상 예제용이며 심판 전체 사건을 검증한 결과가 아닙니다.

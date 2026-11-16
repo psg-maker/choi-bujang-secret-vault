@@ -13,7 +13,7 @@ test('시작 틀 기준표를 보존하고 2단계 자료 API를 포함한다', 
   assert.equal(baseline.starter, 'ChoiTimo/aleph-defense-starter');
   assert.deepEqual(baseline.functions, []);
   assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js']);
-  assert.deepEqual(actual, [...baseline.functions, ...baseline.allowedNew, 'api/notes.js'].sort());
+  assert.deepEqual(actual, [...baseline.functions, ...baseline.allowedNew, 'api/notes.js', 'api/notices.js'].sort());
 });
 
 test('미구현 서버 뼈대는 성공이나 로그인 통과로 가장하지 않는다', async () => {

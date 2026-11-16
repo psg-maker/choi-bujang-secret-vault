@@ -3,6 +3,39 @@ import { test } from 'node:test';
 import { decide, inspectConnection, RULE_IDS } from '../src/decider.mjs';
 import { fixtureRequests } from '../scripts/fixture-7.mjs';
 
+test('resource zones allow single notes and notice reads only', async () => {
+  const { normal } = fixtureRequests();
+  const at = (service, method, path, route, extra = {}) => decide({ ...normal,
+    service, method, path, route: route ?? `${method} ${path}`, ...extra });
+  for (const [method, path] of [['GET', '/notes/demo'], ['PUT', '/notes/demo'],
+    ['DELETE', '/notes/not-a-uuid'], ['GET', '/notes/22222222-2222-4222-8222-222222222222']]) {
+    assert.equal((await at('notes', method, path, `${method} /notes/:id`)).decision, 'allow');
+  }
+  assert.equal((await at('notices', 'GET', '/notices')).decision, 'allow');
+  const denied = [
+    at('notes', 'GET', '/notes'), at('notes', 'POST', '/notes'),
+    at('notes', 'GET', '/notes/demo/export', 'GET /notes/:id'),
+    at('notes', 'GET', '/notes/', 'GET /notes/:id'),
+    at('notes', 'GET', '/notes/demo', 'GET /notes/:id', { queryLength: 9 }),
+    at('notes', 'POST', '/notes/demo', 'GET /notes/:id'),
+    at('notes', 'GET', '/notes/export', 'GET /notes/export'),
+    at('notices', 'GET', '/notes/demo', 'GET /notes/:id'),
+    ...['POST', 'PUT', 'PATCH', 'DELETE'].flatMap(method => [
+      at('notices', method, '/notices'), at('notices', method, '/notices/x', `${method} /notices/:id`)]),
+    ...['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].flatMap(method => [
+      at('materials', method, '/materials'), at('materials', method, '/materials/x', `${method} /materials/:id`)]),
+    at('unknown', 'GET', '/unknown'), at(undefined, 'GET', '/notes/demo', 'GET /notes/:id'),
+    at('notes', 'GET', '/notes/demo', null), at('constructor', 'GET', '/x'),
+  ];
+  for (const result of await Promise.all(denied)) {
+    assert.deepEqual([result.decision, result.reasonCode, result.ruleIds],
+      ['deny', 'route_not_allowed', ['resource_zone']]);
+  }
+  // Earlier device rule still decides first for unregistered devices.
+  assert.equal((await at('materials', 'GET', '/materials', null, { deviceRegistered: false })).reasonCode,
+    'device_not_registered');
+});
+
 test('only boolean true permits a registered device request', async () => {
   const { normal } = fixtureRequests();
   assert.ok(RULE_IDS.includes('device_registered'));

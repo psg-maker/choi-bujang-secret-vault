@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if ([3, 4, 5, 6, 7].includes(config.step)) {
+  if ([3, 4, 5, 6, 7, 8].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;
@@ -84,6 +84,12 @@ export async function runAttackChecks(config) {
       results.push({ attackId: 'step_up_live',
         expected: '추가 확인 전 자료 차단·같은 계정 새 로그인 검증 뒤 새 요청 재판정',
         observed: '미실행 (새 로그인 연결 계약 미제공·로컬 시험과 채점 기준 충돌 미해결)' });
+    }
+    if (config.step >= 8) {
+      await probe('anonymous_notice_list', '비로그인 공지 GET은 401/403과 자료 없는 JSON 오류', '/api/notices', denial);
+      results.push({ attackId: 'resource_zone_live',
+        expected: '자기 메모 단건 허용·메모 전체 목록·공지 쓰기·강사 자료 거부',
+        observed: '미실행 (구역 규칙은 로컬 가상 요청 시험만 실행, 실제 릴레이·심판 판정 미확인)' });
     }
     return results;
   }

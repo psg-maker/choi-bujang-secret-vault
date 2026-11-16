@@ -21,7 +21,7 @@ function response() {
 test('real login verifier gates note queries and ignores client identities', async () => {
   const before = { fetch: globalThis.fetch, url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY };
   const serverKey = 'test-only-server-credential';
-  const rows = Array.from({ length: 4 }, (_, i) => ({ id: `22222222-2222-4222-8222-22222222222${i}`, title: `Title ${i}`, body: `Body ${i}`, owner_id: 'hidden' }));
+  const rows = Array.from({ length: 4 }, (_, i) => ({ id: `22222222-2222-4222-8222-22222222222${i}`, title: `Title ${i}`, body: `Body ${i}`, owner_id: userId }));
   let reads = 0;
   let upstreamFails = false;
   try {
@@ -32,7 +32,7 @@ test('real login verifier gates note queries and ignores client identities', asy
       reads += 1;
       assert.equal(url.origin, project);
       assert.equal(url.pathname, '/rest/v1/training_user_notes');
-      assert.equal(url.searchParams.get('select'), 'id,title,body');
+      assert.equal(url.searchParams.get('select'), 'id,title,body,owner_id');
       assert.equal(url.searchParams.get('owner_id'), `eq.${userId}`);
       assert.equal(options.headers.apikey, serverKey);
       assert.equal(options.headers.authorization, undefined);
@@ -78,6 +78,14 @@ test('real login verifier gates note queries and ignores client identities', asy
     const post = response();
     await handler({ ...request, method: 'PATCH' }, post);
     assert.equal(post.code, 405);
+    // Upstream returns someone else's row despite the filter; a forged query/body role must not help.
+    upstreamFails = false;
+    rows[1].owner_id = '99999999-9999-4999-8999-999999999999';
+    const mismatch = response();
+    await handler({ ...request, url: '/api/notes?zone=notices&role=instructor',
+      body: { role: 'instructor', owner_id: rows[1].owner_id } }, mismatch);
+    assert.equal(mismatch.code, 403);
+    assert.deepEqual(mismatch.body, { error: 'OWNER_MISMATCH' });
   } finally {
     globalThis.fetch = before.fetch;
     for (const [name, value] of [['SUPABASE_URL', before.url], ['SUPABASE_SECRET_KEY', before.key]]) {
