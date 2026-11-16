@@ -51,9 +51,9 @@
 
 | 단계 | 확인 | 결과 |
 |---|---|---|
-| 1 정책 사본 | `npm.cmd run policy:verify` | 이번 재시험에서 미실행 |
+| 1 정책 사본 | `npm.cmd run policy:verify` | 사용자 확인: `사본 검증 통과 · 커밋 595e472 · 파일 5개 해시 일치` → 통과, 2단계로 |
 | 1 자료 사본 | SQL 사본 행 재검증 | 사용자 확인: 행 1개 · `created_at 2026-11-16 01:20:46+00` · `hash_ok = true` → 통과, 2단계로 |
-| 2 정책 | `policy:diff` / `policy:restore` 미리보기 | 이번 재시험에서 미실행 |
+| 2 정책 | `policy:diff` / `policy:restore` 미리보기 | 사용자 확인 (`policy:diff`): 복원할 버전 `커밋 595e472 · 2026-11-16T00:50:30.735Z`, 변경 범위 1개 파일 — `aleph.config.json`의 `step 9→10`·`restoreRoute null→POST /api/restore/:id`(10단계 설정 변경, 접근 규칙 아님). 의도한 차이이므로 운영 정책 복원 요청은 하지 않음. 아무것도 복원하지 않았다고 출력 |
 | 2 자료 | SQL 운영 행 비교 | 사용자 확인: `owner_same = true` · `content_same = true` → 중단 조건 없음, 3단계로 |
 | 3 자료 | B 로그인 `POST /api/restore/b10c…b1` | 사용자 확인: 200 · `restored: true` · `ownerMatched: true` · `contentSha256 8cc849a8…eeec5ff` |
 
