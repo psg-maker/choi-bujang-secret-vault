@@ -24,6 +24,9 @@ test('step 7 self-check never claims live reauthentication from simulated respon
     const step10 = await runAttackChecks({ ...config, step: 10 });
     assert.match(step10.find(check => check.attackId === 'anonymous_note_restore').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
     assert.match(step10.find(check => check.attackId === 'note_restore_live').observed, /미실행/);
+    const step11 = await runAttackChecks({ ...config, step: 11 });
+    assert.match(step11.find(check => check.attackId === 'anonymous_device_challenge').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
+    assert.ok(step11.length <= 20, `bundle accepts at most 20 attempts, got ${step11.length}`);
   } finally { globalThis.fetch = original; }
 });
 
