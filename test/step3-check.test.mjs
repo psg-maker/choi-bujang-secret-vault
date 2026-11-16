@@ -19,6 +19,8 @@ test('step 7 self-check never claims live reauthentication from simulated respon
     const step8 = await runAttackChecks({ ...config, step: 8 });
     assert.match(step8.find(check => check.attackId === 'resource_zone_live').observed, /미실행/);
     assert.match(step8.find(check => check.attackId === 'anonymous_notice_list').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
+    const step9 = await runAttackChecks({ ...config, step: 9 });
+    assert.match(step9.find(check => check.attackId === 'burst_revocation_live').observed, /미실행/);
   } finally { globalThis.fetch = original; }
 });
 

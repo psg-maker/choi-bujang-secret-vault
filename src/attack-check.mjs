@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if ([3, 4, 5, 6, 7, 8].includes(config.step)) {
+  if ([3, 4, 5, 6, 7, 8, 9].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;
@@ -90,6 +90,11 @@ export async function runAttackChecks(config) {
       results.push({ attackId: 'resource_zone_live',
         expected: '자기 메모 단건 허용·메모 전체 목록·공지 쓰기·강사 자료 거부',
         observed: '미실행 (구역 규칙은 로컬 가상 요청 시험만 실행, 실제 릴레이·심판 판정 미확인)' });
+    }
+    if (config.step >= 9) {
+      results.push({ attackId: 'burst_revocation_live',
+        expected: '같은 사용자 10분 안 GET 121건 이상만 회수 제안, 120건 이하·느린 조회·여러 사용자는 관찰',
+        observed: '미실행 (detect:test 가상 사건 연습만 실행, 운영 엔진 사건 전달·접속 회수 미연결)' });
     }
     return results;
   }
