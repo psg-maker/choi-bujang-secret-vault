@@ -28,10 +28,10 @@
 | 1 | 공개 자료 노출 | 비로그인 `GET /data.json` | 404 | 사용자 확인 (2026-11-16, 브라우저 주소창): 404 NOT_FOUND |
 | 2 | 비로그인 목록 | 비로그인 `GET /api/notes` | 401 JSON 오류, 자료 없음 | 사용자 확인 (2026-11-16, 브라우저 주소창): `{"error":"UNAUTHORIZED"}`, 자료 없음 (상태 코드는 화면에 표시되지 않음) |
 | 3-1 | 비로그인 쓰기·단건 | 비로그인 `POST /api/notes`, `GET·PUT·DELETE /api/notes/:id` | 모두 401 | `npm.cmd run bundle` 자기 점검 (2026-11-16, 배포 `64e6177`): 4개 모두 HTTP 401 · JSON 오류 · 거부 조건 충족 |
-| 3-2 | 로그인 정상 요청 | A 로그인 → 자기 메모 추가·조회·수정·삭제 | 201·200·200·204, 삭제 후 404 | 미실행 |
-| 4-1 | 다른 사람 메모 | B 로그인 → A 메모 ID로 `GET·PUT·DELETE` | 모두 404, A 메모 보존 | 미실행 |
-| 4-2 | 소유자 바꾸기 | A 로그인 → 자기 메모 `PUT`에 `owner_id: B` | 403 `OWNER_CHANGE_FORBIDDEN` | 미실행 |
-| 5 | 원본 DB 직접 접근 | 공개 anon 키로 `training_user_notes` 직접 요청 (Supabase SQL Editor 권한 확인으로 대체 가능) | 자료 없이 거부, anon 권한 없음 | 미실행 |
+| 3-2 | 로그인 정상 요청 | A 로그인 → 자기 메모 추가·조회·수정·삭제 | 201·200·200·204, 삭제 후 404 | 사용자 확인 (2026-11-16, A 로그인 콘솔): 추가 201 · 조회 200 · 수정 200 · 삭제 204 · 삭제 뒤 404 |
+| 4-1 | 다른 사람 메모 | B 로그인 → A 메모 ID로 `GET·PUT·DELETE` | 모두 404, A 메모 보존 | 사용자 확인 (2026-11-16): B 로그인 GET 404 · PUT 404 · DELETE 404, 그 뒤 A 로그인 조회 200 (보존) |
+| 4-2 | 소유자 바꾸기 | A 로그인 → 자기 메모 `PUT`에 `owner_id: B` | 403 `OWNER_CHANGE_FORBIDDEN` | 사용자 확인 (2026-11-16, A 로그인 콘솔): B UID로 `owner_id` 변경 PUT 403 Forbidden (UID는 기록 생략) |
+| 5 | 원본 DB 직접 접근 | 공개 anon 키로 `training_user_notes` 직접 요청 (Supabase SQL Editor 권한 확인으로 대체 가능) | 자료 없이 거부, anon 권한 없음 | 사용자 확인 (2026-11-16, SQL Editor 권한 조회로 대체): anon select·insert 모두 false. 공개 키 직접 요청은 미실행 |
 | 6 | 미등록 기기 | `npm.cmd run decider:test` | `등록 기기의 정상 요청`·`미등록 기기의 가상 요청` 통과 (`allow` / `deny`) | 사용자 확인 (2026-11-16): 4개 모두 통과 |
 | 7 | 복합 이상 접속 | `npm.cmd run fixture:7` | `정상 사건: allow`, `복합 이상 사건: step_up` | 사용자 확인 (2026-11-16): 정상 사건 allow · 복합 이상 사건 step_up |
 | 8-1 | 구역 규칙 | `node --test test/decider.test.mjs` | 메모 단건·공지 읽기 `allow`, 메모 전체 목록·공지 쓰기·강사 자료 `deny` | 사용자 확인 (2026-11-16): 전체 통과 |
