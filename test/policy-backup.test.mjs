@@ -62,7 +62,8 @@ test('policy backup verifies hashes, stops on missing or tampered copies, diffs 
 
     // CRLF checkout of the same content still verifies.
     const copy = join(root, 'backup/policy/aleph.config.json');
-    writeFileSync(copy, readFileSync(copy, 'utf8').replaceAll('\n', '\r\n'));
+    // Normalize first: a Windows clone may already be CRLF, and \r\r\n would be a real change.
+    writeFileSync(copy, readFileSync(copy, 'utf8').replaceAll('\r\n', '\n').replaceAll('\n', '\r\n'));
     verify(root);
     writeFileSync(copy, readFileSync(copy, 'utf8').replace('"step"', '"stage"'));
     assert.throws(() => verify(root), /해시가 맞지 않습니다: aleph\.config\.json/u);
