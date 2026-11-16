@@ -16,11 +16,12 @@ test('vault stays locked until the server approves; the request button alone ope
   const { elements, document } = screen();
   const views = [];
   let approved = false;
+  let revoked = false;
   const server = async (path) => {
     if (path === '/api/device/challenge') return Response.json({ challenge: 'c', rpId: 'vault.test', userId: 'u', credentialIds: ['AQID'] });
     if (path === '/api/device/register') return Response.json({ status: 'pending' }, { status: 201 });
     return approved ? Response.json({ status: 'approved', deviceToken: 'device-token-value', expiresInSeconds: 900 })
-      : Response.json({ error: 'DEVICE_NOT_APPROVED', status: 'pending' }, { status: 403 });
+      : Response.json({ error: 'DEVICE_NOT_APPROVED', status: revoked ? 'revoked' : 'pending' }, { status: 403 });
   };
   const credentials = {
     create: async () => ({ rawId: buffer('id'), response: { clientDataJSON: buffer('{}'), getAuthenticatorData: () => buffer('a'),
@@ -38,14 +39,23 @@ test('vault stays locked until the server approves; the request button alone ope
   assert.match(elements['device-status'].textContent, /대기/u);
   elements['device-check'].click(); await tick(); await tick();
   assert.match(elements['device-error'].textContent, /승인되지 않았습니다/u);
-  assert.deepEqual(views, [null], 'no session reaches the notes view before approval');
+  assert.ok(views.every(view => view === null), 'no session reaches the notes view before approval');
 
   approved = true;
   elements['device-check'].click(); await tick(); await tick(); await tick();
-  assert.equal(views.length, 2);
-  assert.equal(views[1].access_token, 'session');
-  assert.equal(views[1].device_token, 'device-token-value');
+  assert.equal(views.filter(Boolean).length, 1);
+  assert.equal(views.at(-1).access_token, 'session');
+  assert.equal(views.at(-1).device_token, 'device-token-value');
   assert.match(elements['device-status'].textContent, /서버가 승인된 기기로 확인/u);
+
+  // A revoked device says so (not "pending") and the vault locks again.
+  approved = false;
+  revoked = true;
+  elements['device-check'].click(); await tick(); await tick(); await tick();
+  assert.match(elements['device-status'].textContent, /취소됨/u);
+  assert.match(elements['device-error'].textContent, /취소되었습니다/u);
+  assert.equal(views.at(-1), null);
+  assert.match(elements.notes.children[0].textContent, /자료를 표시하지 않습니다/u);
 
   update(null);
   assert.equal(views.at(-1), null);

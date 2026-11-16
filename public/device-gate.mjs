@@ -34,6 +34,9 @@ export function createDeviceGate(document, notesView, { fetchImpl = fetch, crede
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body) });
     const data = await response.json().catch(() => ({}));
+    if (data.error === 'DEVICE_NOT_APPROVED' && data.status === 'revoked') {
+      throw Object.assign(new Error('이 기기의 승인이 취소되었습니다. 관리자에게 다시 승인을 요청해 주세요.'), { code: data.error, state: 'revoked' });
+    }
     if (!response.ok) throw Object.assign(new Error(messages[data.error] ?? '기기 승인 요청을 처리하지 못했습니다.'), { code: data.error });
     return data;
   }
@@ -44,7 +47,10 @@ export function createDeviceGate(document, notesView, { fetchImpl = fetch, crede
     try { await task(active); } catch (error) {
       if (session === active) {
         errorBox.textContent = error.name === 'NotAllowedError' ? '패스키 확인이 취소되었습니다.' : error.message;
-        if (error.code === 'DEVICE_NOT_APPROVED') status.textContent = '기기 승인 상태: 대기 — 자료실이 잠겨 있습니다.';
+        if (error.code === 'DEVICE_NOT_APPROVED') {
+          status.textContent = `기기 승인 상태: ${error.state === 'revoked' ? '취소됨' : '대기'} — 자료실이 잠겨 있습니다.`;
+          lock('기기 승인을 서버에서 확인하기 전에는 자료를 표시하지 않습니다.');
+        }
       }
     } finally { busy = false; register.disabled = false; check.disabled = false; }
   }
