@@ -3,7 +3,7 @@
 ## 11단계 저장점 이후: 토큰을 브라우저 저장소에 남기지 않음 (2026-11-24 KST)
 
 심판 지적(`evidence_rejected`, 40/100, `S11_KEY_EXPOSED`)에 따라 `public/login.mjs`의 `createClient`에 `auth: { persistSession: false }`를 적용했습니다. 로그인 토큰은 메모리에만 있고 localStorage에 쓰이지 않으며, 새로 고치면 다시 로그인합니다. `public/auth-ui.mjs`의 `getSession()`은 이제 메모리 세션만 읽으므로 바꾸지 않았습니다.
-- **다시 확인**: 로그인 뒤 개발자 도구 Application → Local Storage에 `sb-…-auth-token` 항목이 없고, 새로 고치면 로그아웃 상태여야 합니다. 이 확인과 재제출 결과는 아직 사용자가 수행하지 않았습니다(미확인).
+- **다시 확인**: 로그인 뒤 개발자 도구 Application → Local Storage에 `sb-…-auth-token` 항목이 없고, 새로 고치면 로그아웃 상태여야 합니다. 사용자 확인 (2026-11-24, 배포 `f30dc05`, `/aleph.json` commit 대조): 로그인한 상태에서 Local Storage에 `sb-…-auth-token` 항목이 없었고, F5로 새로 고치자 로그아웃 상태로 돌아갔습니다. Session storage·Cookies 목록은 따로 보지 않았습니다. 재제출 결과는 미확인입니다.
 - 자동 시험 `node --test test/*.test.mjs` 43건 통과(이번 변경을 직접 검사하는 시험은 없음). 설정·판정기·허용 경로는 바꾸지 않고 보존했습니다.
 
 ## 11단계 저장점: 나만의 접속 앱을 완성합니다 (2026-11-16 KST)
