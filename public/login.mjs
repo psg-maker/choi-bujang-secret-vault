@@ -21,7 +21,9 @@ if (!errorBox.textContent) {
   try {
     // Same exact SDK version as package.json. Auth owns password verification and session storage.
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm');
-    const supabase = createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLISHABLE_KEY);
+    const supabase = createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: false }, // 토큰을 localStorage에 쓰지 않고 메모리에만 둠
+    });
     await mountAuth(supabase, document, createDeviceGate(document, createNotesView(document)));
   } catch {
     status.textContent = '로그인을 시작하지 못했습니다.';
