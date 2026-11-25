@@ -159,3 +159,8 @@
 - 기기 승인 시험은 SQL로 `pending`→`revoked`로 바꿔 보내고 마지막에 모두 `approved`로 되돌림. 서버는 요청마다 DB의 기기 상태를 다시 확인하므로 같은 토큰으로도 403이 됨.
 - README에 제공된 것(시작 틀, 운영 엔진)과 학생 작업을 Git 커밋 기록으로 나눈 출처 표를 추가함.
 - `step`을 12로 올렸고 `attack-check.mjs`는 12단계를 허용하도록만 고침(자기 점검은 이미 상한 20개).
+
+### 심판 지적 뒤 고친 것 (12단계)
+- `S12_BUNDLE_UNSUPPORTED`: 격리 환경은 GET·HEAD만 허용 → 쓰기 요청 점검은 보내지 않고 `not_run`.
+- `S12_SCREEN_MISMATCH`: 심판은 요청의 꼬리표(`alephEvidence: { caseId, requestKey: 'probe' }`)로 어느 점검의 요청인지 알아봄 → 점검 fetch마다 붙임. 보낸 점검은 실제 HTTP 상태, 안 보낸 점검은 미실행.
+- `S12_SOURCE_MIXED`: 엔진은 「ALEPH SDP 엔진」이라고 적고, 학생이 만든 판정기·탐지 규칙·접속 앱·자료실과 나눠 적음. 심판 메모(`bundle-notes.json`, Git 제외)도 12단계 내용으로 다시 씀.

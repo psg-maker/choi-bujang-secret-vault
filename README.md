@@ -4,7 +4,7 @@
 
 - **탈환 작전실**: 로그인하면 「탈환 작전실」 칸이 읽기 전용 `GET /api/war-room`을 불러 판정기 규칙(서버 코드 정의), 탐지 기준(미실행), 회수 상태(내 기기의 대기·승인·취소됨 건수와 가린 ID), 복구 버전(사본의 가린 ID·해시 앞 8자리·현재 메모와 해시 대조)을 보여 줍니다. 메모 제목·본문과 전체 ID는 서버가 보내지 않고 화면에도 표시하지 않습니다. 서버가 확인한 기록(`server_record`)·코드 정의(`defined`)·미실행(`not_run`)을 제목으로 나눠 표시합니다.
 - **수치와 서버 기록의 일치**: 합계는 같은 응답의 가린 목록에서 서버가 세고, 화면이 합계와 목록 건수를 다시 대조해 맞지 않으면 「이 요약을 믿지 마세요」를 표시합니다. 이 대조는 자동 시험(`test/war-room.test.mjs`)으로 확인했습니다.
-- **탐지 사건은 미실행**: 운영 엔진의 사건 전달·접속 회수가 연결되지 않아 실제 사건 수는 확인하지 않습니다(`detect:test`는 가상 사건 연습). 판정기 규칙도 실제 심판 판정이 아니라 코드에 정의된 규칙 이름과 구역입니다.
+- **탐지 사건은 미실행**: ALEPH SDP 엔진의 사건 전달·접속 회수가 연결되지 않아 실제 사건 수는 확인하지 않습니다(`detect:test`는 가상 사건 연습). 판정기 규칙도 실제 심판 판정이 아니라 코드에 정의된 규칙 이름과 구역입니다.
 - **사용자 확인 (2026-11-25, 배포 `5d41916`, 로그인한 A 계정)**: 작전실 「회수 상태」가 서버 기록 3건(대기 0 · 승인 3 · 취소됨 0)과 기기 `aa5aa8df…`·`00b22660…`·`c12c9484…` 승인으로 표시되고 「대조」가 일치로 나왔습니다. Supabase SQL Editor에서 같은 계정의 `training_devices`를 조회한 결과(앞 8자리 `aa5aa8df`·`00b22660`·`c12c9484`, 모두 `approved`, 3행)가 화면과 같았습니다. 메모 제목·본문은 화면에 나오지 않았습니다. 같은 계정의 `training_note_backups` 건수 조회도 `count = 0`으로 화면의 「복구 버전 0건」과 같았습니다. **미확인**: B 계정(복구 사본 1건)의 작전실 화면은 확인하지 않았습니다. 자동 시험 `node --test test/*.test.mjs` 48건은 통과했습니다.
 - **번들 자기 점검 수정 (심판 지적 `S12_BUNDLE_UNSUPPORTED`)**: 격리 환경은 `GET`·`HEAD` 요청만 허용하므로 `src/attack-check.mjs`가 쓰기 요청(`POST`·`PUT`·`DELETE`: 비로그인 메모 생성·수정·삭제, 비로그인 복구, 비로그인 기기 요청)을 더 이상 보내지 않고 `observed`를 `not_run`으로 둡니다. 나머지 `GET` 점검은 그대로 보냅니다. 이 쓰기 요청의 실제 결과는 `docs/ATTACK_MATRIX.md`(M03·M05·M06·M30·M32)에 직접 보낸 값이 있습니다. 이전 단계 기록의 "비로그인 쓰기 요청도 번들이 보낸다"는 설명은 이 변경으로 바뀌었습니다. 재제출 결과는 아직 미확인입니다.
 - **설정**: 단계 12. 발급자·배포 주소·`allowedRoutes`·원본 API·`restoreRoute`·`judgeIssuer`는 바꾸지 않았습니다. `src/attack-check.mjs`는 12단계를 허용하도록만 고쳤고, 자기 점검이 이미 상한 20개라서 작전실 항목은 추가하지 않았습니다. `src/decider.mjs`는 바꾸지 않았습니다. `policy:diff`는 `step`·`restoreRoute` 차이를 계속 보여 줍니다.
@@ -35,8 +35,8 @@
 | 시작 틀이 제공 (이후 수정) | `scripts/deployment-identity.mjs`, `scripts/build-public.mjs`, `scripts/decider-test.mjs`, `src/decider.mjs`, `src/detect.mjs`, `src/attack-check.mjs` | 최초 커밋의 틀을 학생이 단계별로 채우거나 고침(커밋 2~11건) |
 | 시작 틀의 미구현 뼈대 | `api/ai.js`, `api/threat-intel.js` | 501만 돌려주며 구현하지 않음 |
 | 운영 측이 채움 | `aleph.config.json`의 `judgeIssuer` | 운영 측이 ZIP을 만들 때 넣은 값. 학생이 바꾸지 않음 |
-| 운영 반 엔진 (이 저장소에 없음) | 요청 판정 엔진, 사건 전달, 접속 회수, 심판 접수·판정 | 코드가 이 저장소에 없고 연결 확인도 못 함. 이 저장소의 `decide()`·`detect()`는 가상 요청·사건 연습만 실행 |
-| 학생 작업 (코딩 도구와 함께 작성) | `api/notes.js`, `api/notes/[id].js`, `api/notices.js`, `api/restore/[id].js`, `api/device/[action].js`, `api/war-room.js`, `src/device-auth.mjs`, `public/*.mjs`·`index.html`, `supabase/*.sql`, `scripts/policy-backup.mjs`, `test/*.test.mjs`, 이 README·`study_memo.md` | 최초 커밋 이후 단계별 커밋에서 추가 |
+| **ALEPH SDP 엔진** (제공, 이 저장소에 없음) | 요청을 확인해 `decide()`를 부르는 엔진, 사건 전달, 접속 회수, 심판 접수·판정 | 코드가 이 저장소에 없고 연결도 확인하지 못했습니다. 학생이 만든 것이 아닙니다 |
+| **학생이 만든 것** (판정기·탐지 규칙·접속 앱·자료실, 코딩 도구와 함께 작성) | `api/notes.js`, `api/notes/[id].js`, `api/notices.js`, `api/restore/[id].js`, `api/device/[action].js`, `api/war-room.js`, `src/device-auth.mjs`, `public/*.mjs`·`index.html`, `supabase/*.sql`, `scripts/policy-backup.mjs`, `test/*.test.mjs`, 이 README·`study_memo.md` | 최초 커밋 이후 단계별 커밋에서 추가 |
 
 ## 11단계 저장점 이후: 토큰을 브라우저 저장소에 남기지 않음 (2026-11-24 KST)
 

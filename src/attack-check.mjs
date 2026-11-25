@@ -22,6 +22,8 @@ export async function runAttackChecks(config) {
       try {
         const response = await fetch(new URL(path, app), {
           method, redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(10000),
+          // 심판이 어느 점검의 요청인지 알아보는 꼬리표입니다. 없으면 요청을 보냈어도 찾지 못합니다.
+          alephEvidence: { caseId: attackId, requestKey: 'probe' },
         });
         observed = await inspect(response);
       } catch { observed = '미확인 (접속 또는 응답 확인 실패)'; }

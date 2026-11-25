@@ -60,6 +60,8 @@ test('step 3 self-check measures actual JSON rejections, identity and security h
     globalThis.fetch = async (url, options) => {
       seen.push(`${options.method ?? 'GET'} ${url.pathname}`);
       assert.equal(options.headers?.Authorization, undefined);
+      assert.match(options.alephEvidence?.caseId ?? '', /^[a-z_]+$/u, '심판이 점검을 알아보는 꼬리표');
+      assert.equal(options.alephEvidence.requestKey, 'probe');
       if (url.pathname === '/aleph.json') return Response.json({ step: 3, commit: 'a'.repeat(40) });
       if (url.pathname === '/') return new Response('DO_NOT_RECORD', { headers: { 'X-Content-Type-Options': 'nosniff' } });
       if (url.pathname === '/data.json') return new Response('DO_NOT_RECORD', { status: 404 });

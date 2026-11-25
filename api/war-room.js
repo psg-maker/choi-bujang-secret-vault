@@ -78,7 +78,7 @@ export default async function handler(request, response) {
       checkedAt: new Date().toISOString(),
       rules: { kind: 'defined', ruleIds: [...RULE_IDS], zones: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, [...v]])) },
       detection: { kind: 'not_run', rule: 'burst_read', windowMinutes: 10, limit: 120,
-        note: '운영 엔진의 사건 전달이 연결되지 않아 실제 사건 수는 확인하지 않았습니다.' },
+        note: 'ALEPH SDP 엔진의 사건 전달이 연결되지 않아 실제 사건 수는 확인하지 않았습니다.' },
       revocation: { kind: 'server_record', total: devices.length,
         counts: { pending: count('pending'), approved: count('approved'), revoked: count('revoked') },
         items: devices.map(d => ({ ref: mask(d.id), status: d.status })) },
