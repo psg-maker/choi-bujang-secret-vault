@@ -13,17 +13,17 @@ test('step 7 self-check never claims live reauthentication from simulated respon
     };
     const checks = await runAttackChecks({ ...config, step: 7 });
     for (const id of ['device_access_live', 'step_up_live', 'original_api_anon_access']) {
-      assert.match(checks.find(check => check.attackId === id).observed, /미실행/);
+      assert.equal(checks.find(check => check.attackId === id).observed, 'not_run');
     }
     assert.match(checks.find(check => check.attackId === 'deployment_identity').observed, /단계 6/);
     const step8 = await runAttackChecks({ ...config, step: 8 });
-    assert.match(step8.find(check => check.attackId === 'resource_zone_live').observed, /미실행/);
+    assert.equal(step8.find(check => check.attackId === 'resource_zone_live').observed, 'not_run');
     assert.match(step8.find(check => check.attackId === 'anonymous_notice_list').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
     const step9 = await runAttackChecks({ ...config, step: 9 });
-    assert.match(step9.find(check => check.attackId === 'burst_revocation_live').observed, /미실행/);
+    assert.equal(step9.find(check => check.attackId === 'burst_revocation_live').observed, 'not_run');
     const step10 = await runAttackChecks({ ...config, step: 10 });
     assert.equal(step10.find(check => check.attackId === 'anonymous_note_restore').observed, 'not_run');
-    assert.match(step10.find(check => check.attackId === 'note_restore_live').observed, /미실행/);
+    assert.equal(step10.find(check => check.attackId === 'note_restore_live').observed, 'not_run');
     const step11 = await runAttackChecks({ ...config, step: 11 });
     assert.equal(step11.find(check => check.attackId === 'anonymous_device_challenge').observed, 'not_run');
     assert.ok(step11.length <= 20, `bundle accepts at most 20 attempts, got ${step11.length}`);
@@ -46,7 +46,7 @@ test('step 5 self-check leaves original anon-key access unexecuted and keeps acc
     assert.equal(seen.length, 5, 'GET만 보내고 쓰기 요청은 보내지 않음');
     assert.ok(seen.every(origin => origin === 'https://vault.vercel.app'));
     for (const id of ['authenticated_note_crud', 'cross_owner_access', 'owner_change', 'original_api_anon_access']) {
-      assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
+      assert.equal(checks.find(x => x.attackId === id).observed, 'not_run');
     }
     assert.equal(checks.some(x => x.attackId === 'database_rls'), false);
     assert.match(checks.find(x => x.attackId === 'deployment_identity').expected, /단계 5/);
@@ -76,7 +76,7 @@ test('step 3 self-check measures actual JSON rejections, identity and security h
     assert.match(checks.find(x => x.attackId === 'anonymous_note_list').observed, /401.*JSON/);
     assert.match(checks.find(x => x.attackId === 'deployment_identity').observed, /단계 3/);
     assert.match(checks.find(x => x.attackId === 'security_header').observed, /nosniff/);
-    assert.match(checks.find(x => x.attackId === 'authenticated_note_crud').observed, /미실행/);
+    assert.equal(checks.find(x => x.attackId === 'authenticated_note_crud').observed, 'not_run');
     assert.ok(!JSON.stringify(checks).includes('DO_NOT_RECORD'));
   } finally { globalThis.fetch = original; }
 });
@@ -108,7 +108,7 @@ test('step 4 self-check preserves deployed identity and does not invent authenti
     assert.match(identity.expected, /단계 4/);
     assert.match(identity.observed, /단계 3/);
     for (const id of ['authenticated_note_crud', 'cross_owner_access', 'owner_change', 'database_rls']) {
-      assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
+      assert.equal(checks.find(x => x.attackId === id).observed, 'not_run');
     }
     assert.equal(checks.filter(x => x.attackId.startsWith('anonymous_note_')).length, 5);
   } finally { globalThis.fetch = original; }

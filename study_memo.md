@@ -164,3 +164,5 @@
 - `S12_BUNDLE_UNSUPPORTED`: 격리 환경은 GET·HEAD만 허용 → 쓰기 요청 점검은 보내지 않고 `not_run`.
 - `S12_SCREEN_MISMATCH`: 심판은 요청의 꼬리표(`alephEvidence: { caseId, requestKey: 'probe' }`)로 어느 점검의 요청인지 알아봄 → 점검 fetch마다 붙임. 보낸 점검은 실제 HTTP 상태, 안 보낸 점검은 미실행.
 - `S12_SOURCE_MIXED`: 엔진은 「ALEPH SDP 엔진」이라고 적고, 학생이 만든 판정기·탐지 규칙·접속 앱·자료실과 나눠 적음. 심판 메모(`bundle-notes.json`, Git 제외)도 12단계 내용으로 다시 씀.
+
+- 재지적(`S12_SCREEN_MISMATCH`, 53점): 심판이 `authenticated_note_crud` 등 5건의 요청 기록을 찾지 못함. 보내지 않은 점검은 `observed`를 `not_run`만 적고(14개), 보내는 점검(6개)만 꼬리표와 실제 HTTP 상태를 기록하도록 고침. 설명 문장은 심판이 기록과 대조하는 `observed`에 넣지 않음.

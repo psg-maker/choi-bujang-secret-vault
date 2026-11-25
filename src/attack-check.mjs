@@ -59,9 +59,7 @@ export async function runAttackChecks(config) {
     });
     await probe('static_notes_absent', '과거 공개 data.json HTTP 404', '/data.json', async response => `HTTP ${response.status}`);
     results.push({ attackId: 'authenticated_note_crud', expected: 'A 계정의 생성·조회·수정·삭제와 삭제 후 404',
-      observed: config.step >= 4
-        ? '이번 자동 점검에서는 미실행 (사용자 수행 시험 결과와 범위는 README 저장점 기록 참조)'
-        : '미실행 (실제 A 계정 배포 CRUD는 별도 확인 필요, 로컬 시험으로 대체하지 않음)' });
+      observed: 'not_run' });
     if (config.step >= 4) {
       for (const [attackId, expected] of [
         ['cross_owner_access', 'A/B 상대 메모 GET·PUT·DELETE는 404이며 기존 행 보존'],
@@ -69,41 +67,41 @@ export async function runAttackChecks(config) {
         ...(config.step === 4 ? [['database_rls', 'authenticated A/B 정상 CRUD 허용, 상대 행 접근·소유자 변경 거부']] : []),
       ]) {
         results.push({ attackId, expected,
-          observed: '이번 자동 점검에서는 미실행 (사용자 수행 시험 결과와 범위는 README 저장점 기록 참조)' });
+          observed: 'not_run' });
       }
     }
     if (config.step >= 5) {
       results.push({ attackId: 'original_api_anon_access',
         expected: '원본 자료 API의 anon 키 직접 요청은 자료 없이 거부',
-        observed: '이번 자동 점검에서는 미실행 (사용자 DB 권한 확인은 README 참조, 실제 anon 키 요청과 심판 판정은 미확인)' });
+        observed: 'not_run' });
     }
     if (config.step >= 6) {
       results.push({ attackId: 'device_access_live',
         expected: '등록 기기 허용·미등록 기기 거부',
-        observed: '미실행 (실제 기기 접근은 로컬 가상 요청 시험으로 대체하지 않음)' });
+        observed: 'not_run' });
     }
     if (config.step >= 7) {
       results.push({ attackId: 'step_up_live',
         expected: '추가 확인 전 자료 차단·같은 계정 새 로그인 검증 뒤 새 요청 재판정',
-        observed: '미실행 (새 로그인 연결 계약 미제공·로컬 시험과 채점 기준 충돌 미해결)' });
+        observed: 'not_run' });
     }
     if (config.step >= 8) {
       await probe('anonymous_notice_list', '비로그인 공지 GET은 401/403과 자료 없는 JSON 오류', '/api/notices', denial);
       results.push({ attackId: 'resource_zone_live',
         expected: '자기 메모 단건 허용·메모 전체 목록·공지 쓰기·강사 자료 거부',
-        observed: '미실행 (구역 규칙은 로컬 가상 요청 시험만 실행, 실제 릴레이·심판 판정 미확인)' });
+        observed: 'not_run' });
     }
     if (config.step >= 9) {
       results.push({ attackId: 'burst_revocation_live',
         expected: '같은 사용자 10분 안 GET 121건 이상만 회수 제안, 120건 이하·느린 조회·여러 사용자는 관찰',
-        observed: '미실행 (detect:test 가상 사건 연습만 실행, 운영 엔진 사건 전달·접속 회수 미연결)' });
+        observed: 'not_run' });
     }
     if (config.step >= 10) {
       await probe('anonymous_note_restore', '비로그인 복구 POST는 401/403과 자료 없는 JSON 오류',
         '/api/restore/b10c0000-0000-4000-8000-0000000000b1', denial, 'POST');
       results.push({ attackId: 'note_restore_live',
         expected: 'B 복구 200·ID·소유자·해시 일치, A의 B 메모 복구 404, 다른 메모 보존',
-        observed: '이번 자동 점검에서는 미실행 (계정 요청 필요, 사용자 수행 결과는 README 복구 표 참조)' });
+        observed: 'not_run' });
     }
     if (config.step >= 11) {
       await probe('anonymous_device_challenge', '비로그인 기기 승인 요청 POST는 401/403과 자료 없는 JSON 오류',
