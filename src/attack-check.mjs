@@ -16,12 +16,12 @@ export async function runAttackChecks(config) {
   if ([3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
+      // 격리된 번들 환경은 GET·HEAD만 허용합니다. 쓰기 요청은 보내지 않고 not_run으로 둡니다(직접 보낸 결과는 docs/ATTACK_MATRIX.md).
+      if (!['GET', 'HEAD'].includes(method)) { results.push({ attackId, expected, observed: 'not_run' }); return; }
       let observed;
       try {
         const response = await fetch(new URL(path, app), {
           method, redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(10000),
-          ...(['POST', 'PUT'].includes(method)
-            ? { headers: { 'Content-Type': 'application/json' }, body: '{}' } : {}),
         });
         observed = await inspect(response);
       } catch { observed = '미확인 (접속 또는 응답 확인 실패)'; }

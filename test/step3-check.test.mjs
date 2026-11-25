@@ -22,10 +22,10 @@ test('step 7 self-check never claims live reauthentication from simulated respon
     const step9 = await runAttackChecks({ ...config, step: 9 });
     assert.match(step9.find(check => check.attackId === 'burst_revocation_live').observed, /미실행/);
     const step10 = await runAttackChecks({ ...config, step: 10 });
-    assert.match(step10.find(check => check.attackId === 'anonymous_note_restore').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
+    assert.equal(step10.find(check => check.attackId === 'anonymous_note_restore').observed, 'not_run');
     assert.match(step10.find(check => check.attackId === 'note_restore_live').observed, /미실행/);
     const step11 = await runAttackChecks({ ...config, step: 11 });
-    assert.match(step11.find(check => check.attackId === 'anonymous_device_challenge').observed, /HTTP 401 · JSON 오류 확인 · 거부 조건 충족/);
+    assert.equal(step11.find(check => check.attackId === 'anonymous_device_challenge').observed, 'not_run');
     assert.ok(step11.length <= 20, `bundle accepts at most 20 attempts, got ${step11.length}`);
   } finally { globalThis.fetch = original; }
 });
@@ -43,7 +43,7 @@ test('step 5 self-check leaves original anon-key access unexecuted and keeps acc
     };
     const checks = await runAttackChecks({ ...config, step: 5,
       originalApiUrl: 'https://project.supabase.co/rest/v1/training_user_notes' });
-    assert.equal(seen.length, 8);
+    assert.equal(seen.length, 5, 'GET만 보내고 쓰기 요청은 보내지 않음');
     assert.ok(seen.every(origin => origin === 'https://vault.vercel.app'));
     for (const id of ['authenticated_note_crud', 'cross_owner_access', 'owner_change', 'original_api_anon_access']) {
       assert.match(checks.find(x => x.attackId === id).observed, /미실행/);
@@ -66,9 +66,11 @@ test('step 3 self-check measures actual JSON rejections, identity and security h
       return Response.json({ error: 'DO_NOT_RECORD' }, { status: 401 });
     };
     const checks = await runAttackChecks(config);
-    assert.equal(seen.length, 8);
-    assert.ok(seen.includes('POST /api/notes'));
-    assert.ok(seen.some(value => value.startsWith('PUT /api/notes/')));
+    assert.equal(seen.length, 5, 'GET만 보내고 쓰기 요청은 보내지 않음');
+    assert.ok(seen.every(value => value.startsWith('GET ')), '격리 환경은 GET·HEAD만 허용');
+    for (const id of ['anonymous_note_create', 'anonymous_note_update', 'anonymous_note_delete']) {
+      assert.equal(checks.find(x => x.attackId === id).observed, 'not_run');
+    }
     assert.match(checks.find(x => x.attackId === 'anonymous_note_list').observed, /401.*JSON/);
     assert.match(checks.find(x => x.attackId === 'deployment_identity').observed, /단계 3/);
     assert.match(checks.find(x => x.attackId === 'security_header').observed, /nosniff/);
