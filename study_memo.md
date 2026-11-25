@@ -152,7 +152,7 @@
 - `api/war-room.js`(읽기 전용 GET, 본인 기록만), `public/war-room.mjs`와 `index.html`의 작전실 칸, `login.mjs` 연결, `test/war-room.test.mjs`.
 
 ### 기억할 점
-- 배포 화면(A 계정)의 작전실 기기 3건이 Supabase `training_devices` 조회 결과와 같음을 확인함. 복구 사본 0건의 SQL 대조와 B 계정 화면은 아직 안 함.
+- 배포 화면(A 계정)의 작전실 기기 3건이 Supabase `training_devices` 조회 결과와 같음을 확인함. 복구 사본 0건도 SQL `count = 0`으로 일치함. B 계정 화면은 아직 안 함.
 
 ### 실측표와 출처 (저장점)
 - `docs/ATTACK_MATRIX.md`: 1~11단계 정상·금지 요청 35줄을 직접 보낸 요청으로 기록. 요청 ID(`x-vercel-id`)와 시각이 모두 있는 줄만 통과, 나머지는 결과만 확인·미기재·로컬 가상 시험으로 나눔. 강의 쪽 41종 목록은 찾지 못해 6종은 미확인으로 남김.
