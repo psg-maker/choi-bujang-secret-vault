@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -13,7 +13,7 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   if (config.step === 1 && (typeof config.sampleMarker !== 'string' || !config.sampleMarker)) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  if ([3, 4, 5, 6, 7, 8, 9, 10, 11].includes(config.step)) {
+  if ([3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(config.step)) {
     const results = [];
     const probe = async (attackId, expected, path, inspect, method = 'GET') => {
       let observed;

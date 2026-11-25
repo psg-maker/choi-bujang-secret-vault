@@ -2,6 +2,7 @@ import { SUPABASE_PROJECT_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-confi
 import { mountAuth } from './auth-ui.mjs';
 import { createNotesView } from './notes-ui.mjs';
 import { createDeviceGate } from './device-gate.mjs';
+import { createWarRoom } from './war-room.mjs';
 
 const status = document.getElementById('auth-status');
 const errorBox = document.getElementById('auth-error');
@@ -24,7 +25,9 @@ if (!errorBox.textContent) {
     const supabase = createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { persistSession: false }, // 토큰을 localStorage에 쓰지 않고 메모리에만 둠
     });
-    await mountAuth(supabase, document, createDeviceGate(document, createNotesView(document)));
+    const gate = createDeviceGate(document, createNotesView(document));
+    const warRoom = createWarRoom(document);
+    await mountAuth(supabase, document, session => { gate(session); warRoom(session); });
   } catch {
     status.textContent = '로그인을 시작하지 못했습니다.';
     errorBox.textContent = '인증 SDK 또는 세션을 불러오지 못했습니다. 네트워크 연결과 프로젝트 설정을 확인해 주세요.';

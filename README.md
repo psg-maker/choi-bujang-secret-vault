@@ -1,5 +1,42 @@
 # BYTE BACK 방어전 시작 틀 R5
 
+## 12단계 저장점: 탈환 작전실을 완성합니다 (2026-11-25 KST)
+
+- **탈환 작전실**: 로그인하면 「탈환 작전실」 칸이 읽기 전용 `GET /api/war-room`을 불러 판정기 규칙(서버 코드 정의), 탐지 기준(미실행), 회수 상태(내 기기의 대기·승인·취소됨 건수와 가린 ID), 복구 버전(사본의 가린 ID·해시 앞 8자리·현재 메모와 해시 대조)을 보여 줍니다. 메모 제목·본문과 전체 ID는 서버가 보내지 않고 화면에도 표시하지 않습니다. 서버가 확인한 기록(`server_record`)·코드 정의(`defined`)·미실행(`not_run`)을 제목으로 나눠 표시합니다.
+- **수치와 서버 기록의 일치**: 합계는 같은 응답의 가린 목록에서 서버가 세고, 화면이 합계와 목록 건수를 다시 대조해 맞지 않으면 「이 요약을 믿지 마세요」를 표시합니다. 이 대조는 자동 시험(`test/war-room.test.mjs`)으로 확인했습니다.
+- **탐지 사건은 미실행**: 운영 엔진의 사건 전달·접속 회수가 연결되지 않아 실제 사건 수는 확인하지 않습니다(`detect:test`는 가상 사건 연습). 판정기 규칙도 실제 심판 판정이 아니라 코드에 정의된 규칙 이름과 구역입니다.
+- **미확인**: 배포 화면의 작전실 수치와 Supabase 기록의 대조는 이 저장점 시점에 사용자가 실행하지 않았습니다. 자동 시험 `node --test test/*.test.mjs` 48건은 통과했습니다.
+- **설정**: 단계 12. 발급자·배포 주소·`allowedRoutes`·원본 API·`restoreRoute`·`judgeIssuer`는 바꾸지 않았습니다. `src/attack-check.mjs`는 12단계를 허용하도록만 고쳤고, 자기 점검이 이미 상한 20개라서 작전실 항목은 추가하지 않았습니다. `src/decider.mjs`는 바꾸지 않았습니다. `policy:diff`는 `step`·`restoreRoute` 차이를 계속 보여 줍니다.
+- **다시 확인**: VS Code **터미널 → 새 터미널**에서 `node --test test/*.test.mjs`. 배포 화면에서 로그인하면 「탈환 작전실」 칸이 나타나고, 로그아웃하면 사라집니다. 로그인 없이 `/api/war-room`을 부르면 401이어야 합니다.
+
+### 1~11단계 정상·금지 요청 실측표 (`docs/ATTACK_MATRIX.md`, 35줄)
+
+직접 보낸 요청의 실제 결과만 적었고 심판의 판정이 아닙니다. 요청 ID는 응답의 `x-vercel-id`(M17은 `sb-request-id`)입니다.
+
+| 구분 | 줄 | 설명 |
+|---|---|---|
+| 통과 (결과·요청 ID·시각 모두 기재) | 14줄: M01~M06, M17, M24, M29~M32, M34, M35 | M01~M06·M17·M24·M30·M32는 2026-11-25 이 PC의 `curl`로 보낸 비로그인 요청, M29·M31·M34·M35는 사용자가 브라우저에서 읽은 값. M35의 오류 이름은 미기재(403만 확인) |
+| 결과·요청 ID·시각을 상태 칸에 글로 적음 | 4줄: M08~M10, M18 | 칸 정리 전 |
+| 결과만 확인 (요청 ID·시각 미기재) | 10줄: M07, M11~M16, M23, M25, M33 | 통과로 세지 않음. M07은 메모 생성 실행만 기록(상태 코드 미기재) |
+| 로컬 가상 시험 (API 응답 아님) | 7줄: M19~M22, M26~M28 | `decider:test`·`fixture:7`·`decider.test.mjs`·`detect:test` 출력. 실행 시각 미기재 |
+
+- **41종 시험**: 목록을 찾지 못했습니다. 위 35줄은 README의 1~11단계 기록과 코드의 시험 항목에서 만든 것이고, 나머지 6종은 목록 미확인이라 실행 여부를 구분하지 못했습니다.
+- **기기 승인 시험 뒤 정리**: SQL로 기기 상태를 바꿔 시험한 뒤 `training_devices` 4건을 모두 `approved`로 되돌렸고, 「승인 확인」으로 자료실이 열리는 것을 확인했습니다. 오늘 새로 등록된 기기 2건이 있어 예전 승인 기록 2건과 합쳐 4건입니다.
+- **로그인 토큰 점검 (11단계 지적 뒤)**: `persistSession: false` 적용 뒤 Local Storage에 `sb-…-auth-token`이 없고 새로 고치면 로그아웃됨을 확인했습니다(위 11단계 기록 참조).
+
+### 제공된 것과 학생 작업의 출처
+
+판단 근거는 Git 커밋 기록입니다. 시작 틀은 최초 커밋 `075dc5c`(Initial commit)에 들어 있던 파일입니다.
+
+| 구분 | 파일 | 근거 |
+|---|---|---|
+| 시작 틀이 제공 (그대로 사용) | `scripts/bundle.mjs`, `scripts/xdr-run.mjs`, `scripts/detect-test.mjs`, `scripts/fixture-7.mjs`, `src/verify-login.mjs`, `docs/DECIDER_REQUEST.md`, `docs/DETECT_EVENTS.md`, `xdr/`, `package/` | 최초 커밋에 있고 이후 수정 커밋이 없음(`verify-login`·`bundle`·`xdr-run`·`detect-test`·`fixture-7`) |
+| 시작 틀이 제공 (이후 수정) | `scripts/deployment-identity.mjs`, `scripts/build-public.mjs`, `scripts/decider-test.mjs`, `src/decider.mjs`, `src/detect.mjs`, `src/attack-check.mjs` | 최초 커밋의 틀을 학생이 단계별로 채우거나 고침(커밋 2~11건) |
+| 시작 틀의 미구현 뼈대 | `api/ai.js`, `api/threat-intel.js` | 501만 돌려주며 구현하지 않음 |
+| 운영 측이 채움 | `aleph.config.json`의 `judgeIssuer` | 운영 측이 ZIP을 만들 때 넣은 값. 학생이 바꾸지 않음 |
+| 운영 반 엔진 (이 저장소에 없음) | 요청 판정 엔진, 사건 전달, 접속 회수, 심판 접수·판정 | 코드가 이 저장소에 없고 연결 확인도 못 함. 이 저장소의 `decide()`·`detect()`는 가상 요청·사건 연습만 실행 |
+| 학생 작업 (코딩 도구와 함께 작성) | `api/notes.js`, `api/notes/[id].js`, `api/notices.js`, `api/restore/[id].js`, `api/device/[action].js`, `api/war-room.js`, `src/device-auth.mjs`, `public/*.mjs`·`index.html`, `supabase/*.sql`, `scripts/policy-backup.mjs`, `test/*.test.mjs`, 이 README·`study_memo.md` | 최초 커밋 이후 단계별 커밋에서 추가 |
+
 ## 11단계 저장점 이후: 토큰을 브라우저 저장소에 남기지 않음 (2026-11-24 KST)
 
 심판 지적(`evidence_rejected`, 40/100, `S11_KEY_EXPOSED`)에 따라 `public/login.mjs`의 `createClient`에 `auth: { persistSession: false }`를 적용했습니다. 로그인 토큰은 메모리에만 있고 localStorage에 쓰이지 않으며, 새로 고치면 다시 로그인합니다. `public/auth-ui.mjs`의 `getSession()`은 이제 메모리 세션만 읽으므로 바꾸지 않았습니다.

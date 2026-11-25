@@ -70,6 +70,14 @@
       <button id="device-check" type="button">승인 확인</button>
       <p id="device-error" class="auth-error" role="alert"></p>
     </section>
+    <section id="war-room" class="auth" aria-labelledby="war-room-heading" hidden>
+      <h2 id="war-room-heading">탈환 작전실</h2>
+      <p>서버가 확인한 기록, 코드에 정의된 규칙, 미실행 항목을 나눠 보여 줍니다. 메모 본문은 표시하지 않습니다.</p>
+      <ul id="war-room-body" aria-live="polite"></ul>
+      <p id="war-room-status" role="status" aria-live="polite"></p>
+      <button id="war-room-refresh" type="button">요약 새로 고침</button>
+      <p id="war-room-error" class="auth-error" role="alert"></p>
+    </section>
     <div id="login-notice" class="notice">자료를 보려면 로그인해 주세요.</div>
     <section id="note-editor" class="auth" aria-labelledby="note-heading" hidden>
       <h2 id="note-heading">내 가상 메모</h2>
